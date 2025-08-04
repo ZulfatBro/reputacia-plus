@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Репутация+ | Цифровой щит вашего бизнеса</title>
+    <title>Репутация+ | Комплексное управление репутацией бизнеса</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
@@ -17,12 +17,10 @@
         .animate-fadeIn { animation: fadeIn 0.6s ease-out forwards; }
         .social-icon { transition: transform 0.3s; }
         .social-icon:hover { transform: scale(1.1); }
-        .module-card { transition: all 0.3s; }
-        .module-card:hover { transform: translateY(-5px); box-shadow: 0 10px 20px rgba(0,0,0,0.1); }
         .feature-card { transition: all 0.3s; }
-        .feature-card:hover { transform: scale(1.02); }
-        .benefit-card { transition: all 0.3s; }
-        .benefit-card:hover { transform: translateY(-3px); box-shadow: 0 5px 15px rgba(0,0,0,0.1); }
+        .feature-card:hover { transform: translateY(-5px); box-shadow: 0 10px 20px rgba(0,0,0,0.1); }
+        .benefit-item { transition: all 0.3s; }
+        .benefit-item:hover { transform: scale(1.02); background-color: #f3e8ff; }
     </style>
 </head>
 <body class="bg-gray-50">
@@ -52,80 +50,25 @@
         </div>
     </header>
 
-    <!-- Модули -->
+    <!-- Ключевые преимущества -->
     <section class="py-12 bg-white">
-        <div class="container mx-auto px-4">
-            <h2 class="text-2xl font-bold text-center mb-8">💰 Тарифные планы</h2>
-            
-            <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
-                <!-- Базовый -->
-                <div class="bg-white p-4 rounded-lg shadow-md border-t-4 border-purple-500 module-card">
-                    <h3 class="text-lg font-bold mb-2">💼 Базовый <span class="float-right">25 000 ₽</span></h3>
-                    <ul class="text-sm space-y-2 mb-4">
-                        <li>✔️ Мониторинг отзывов</li>
-                        <li>✔️ Регулярные отчёты</li>
-                        <li>✔️ Реакция на негатив</li>
-                    </ul>
-                    <p class="text-xs text-gray-500 mb-3">⏱️ Быстрый старт. Для первого теста</p>
-                    <button class="w-full bg-purple-600 text-white py-1 rounded font-medium">Выбрать</button>
-                </div>
-                
-                <!-- Базовый+ -->
-                <div class="bg-white p-4 rounded-lg shadow-md border-t-4 border-purple-600 module-card">
-                    <h3 class="text-lg font-bold mb-2">📊 Базовый+ <span class="float-right">35 000 ₽</span></h3>
-                    <ul class="text-sm space-y-2 mb-4">
-                        <li>✔️ Всё из Базового</li>
-                        <li>➕ Отчёты от SMM-менеджеров</li>
-                    </ul>
-                    <p class="text-xs text-gray-500 mb-3">📑 Для развития бизнеса</p>
-                    <button class="w-full bg-purple-600 text-white py-1 rounded font-medium">Выбрать</button>
-                </div>
-                
-                <!-- Развитие -->
-                <div class="bg-white p-4 rounded-lg shadow-md border-t-4 border-purple-700 module-card">
-                    <h3 class="text-lg font-bold mb-2">🚀 Развитие <span class="float-right">50 000 ₽</span></h3>
-                    <ul class="text-sm space-y-2 mb-4">
-                        <li>✔️ Всё из Базового+</li>
-                        <li>➕ Оптимизация соцсетей</li>
-                        <li>➕ Анализ конкурентов</li>
-                    </ul>
-                    <button class="w-full bg-purple-700 text-white py-1 rounded font-medium">Выбрать</button>
-                </div>
-                
-                <!-- Максимум -->
-                <div class="bg-white p-4 rounded-lg shadow-md border-t-4 border-purple-800 module-card">
-                    <h3 class="text-lg font-bold mb-2">🏆 Максимум <span class="float-right">70 000 ₽</span></h3>
-                    <ul class="text-sm space-y-2 mb-4">
-                        <li>✔️ Всё включено</li>
-                        <li>➕ Глубокая аналитика</li>
-                        <li>➕ Личный менеджер</li>
-                        <li>➕ Приоритетная поддержка</li>
-                    </ul>
-                    <button class="w-full bg-purple-800 text-white py-1 rounded font-medium">Выбрать</button>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <!-- Основные преимущества -->
-    <section class="py-12 bg-gray-50">
         <div class="container mx-auto px-4">
             <h2 class="text-2xl font-bold text-center mb-8">✅ Преимущества работы с нами</h2>
             
-            <div class="grid md:grid-cols-3 gap-6">
-                <div class="bg-white p-6 rounded-lg shadow-sm benefit-card">
+            <div class="grid md:grid-cols-3 gap-6 max-w-5xl mx-auto">
+                <div class="bg-purple-50 p-6 rounded-lg feature-card">
                     <div class="text-3xl mb-3">⚡</div>
                     <h3 class="text-lg font-bold mb-2">Быстрая реакция</h3>
                     <p class="text-gray-600">Оперативно находим негативные отзывы и минимизируем их влияние на репутацию вашего бизнеса.</p>
                 </div>
                 
-                <div class="bg-white p-6 rounded-lg shadow-sm benefit-card">
+                <div class="bg-purple-50 p-6 rounded-lg feature-card">
                     <div class="text-3xl mb-3">📊</div>
                     <h3 class="text-lg font-bold mb-2">Регулярные отчёты</h3>
                     <p class="text-gray-600">Предоставляем регулярные отчёты о состоянии вашей репутации на ключевых площадках.</p>
                 </div>
                 
-                <div class="bg-white p-6 rounded-lg shadow-sm benefit-card">
+                <div class="bg-purple-50 p-6 rounded-lg feature-card">
                     <div class="text-3xl mb-3">📈</div>
                     <h3 class="text-lg font-bold mb-2">Комплексный подход</h3>
                     <p class="text-gray-600">Помимо работы с отзывами, подключаем PR и SMM-менеджеров для анализа и улучшения ваших соцсетей и сайтов.</p>
@@ -135,67 +78,187 @@
     </section>
 
     <!-- Надежное решение -->
-    <section class="py-12 bg-white">
+    <section class="py-12 bg-gray-50">
         <div class="container mx-auto px-4">
             <h2 class="text-2xl font-bold text-center mb-8">🛡️ Надёжное решение по управлению репутацией</h2>
             
-            <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-                <div class="bg-purple-50 p-6 rounded-lg feature-card">
+            <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-6xl mx-auto">
+                <div class="bg-white p-6 rounded-lg shadow-sm benefit-item">
                     <div class="flex items-start">
                         <div class="text-2xl mr-4">⚡</div>
                         <div>
                             <h3 class="font-bold mb-2">Быстро</h3>
-                            <p class="text-gray-600 text-sm">Мы оперативно находим негативные отзывы о вашем бизнесе на ключевых площадках.</p>
+                            <p class="text-gray-600">Мы оперативно находим негативные отзывы о вашем бизнесе на ключевых площадках.</p>
                         </div>
                     </div>
                 </div>
                 
-                <div class="bg-purple-50 p-6 rounded-lg feature-card">
+                <div class="bg-white p-6 rounded-lg shadow-sm benefit-item">
                     <div class="flex items-start">
                         <div class="text-2xl mr-4">🧠</div>
                         <div>
                             <h3 class="font-bold mb-2">Нейро-технологично</h3>
-                            <p class="text-gray-600 text-sm">Анализируем ситуацию и помогаем снизить влияние негатива. Корреляция с помощью нейросетей.</p>
+                            <p class="text-gray-600">Анализируем ситуацию и помогаем снизить влияние негатива. Корреляция с помощью нейросетей.</p>
                         </div>
                     </div>
                 </div>
                 
-                <div class="bg-purple-50 p-6 rounded-lg feature-card">
+                <div class="bg-white p-6 rounded-lg shadow-sm benefit-item">
                     <div class="flex items-start">
                         <div class="text-2xl mr-4">🎯</div>
                         <div>
                             <h3 class="font-bold mb-2">Эффективно</h3>
-                            <p class="text-gray-600 text-sm">Формируем положительный фон вокруг вашей компании, создавая позитивный онлайн-образ.</p>
+                            <p class="text-gray-600">Формируем положительный фон вокруг вашей компании, создавая позитивный онлайн-образ.</p>
                         </div>
                     </div>
                 </div>
                 
-                <div class="bg-purple-50 p-6 rounded-lg feature-card">
+                <div class="bg-white p-6 rounded-lg shadow-sm benefit-item">
                     <div class="flex items-start">
                         <div class="text-2xl mr-4">📊</div>
                         <div>
                             <h3 class="font-bold mb-2">Отчётность</h3>
-                            <p class="text-gray-600 text-sm">Предоставляем регулярные отчёты о состоянии вашей репутации.</p>
+                            <p class="text-gray-600">Предоставляем регулярные отчёты о состоянии вашей репутации.</p>
                         </div>
                     </div>
                 </div>
                 
-                <div class="bg-purple-50 p-6 rounded-lg feature-card">
+                <div class="bg-white p-6 rounded-lg shadow-sm benefit-item">
+                    <div class="flex items-start">
+                        <div class="text-2xl mr-4">💰</div>
+                        <div>
+                            <h3 class="font-bold mb-2">Бесплатно</h3>
+                            <p class="text-gray-600">Подключаем PR и SMM-менеджеров для анализа и улучшения ваших соцсетей и сайта.</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="bg-white p-6 rounded-lg shadow-sm benefit-item">
                     <div class="flex items-start">
                         <div class="text-2xl mr-4">🤝</div>
                         <div>
                             <h3 class="font-bold mb-2">Заботливо</h3>
-                            <p class="text-gray-600 text-sm">Помогаем бизнесу расти, освобождая вас от забот, связанных с репутацией.</p>
+                            <p class="text-gray-600">Помогаем бизнесу расти, освобождая вас от забот, связанных с репутацией.</p>
                         </div>
                     </div>
                 </div>
                 
-                <div class="bg-purple-50 p-6 rounded-lg feature-card">
+                <div class="bg-white p-6 rounded-lg shadow-sm benefit-item">
+                    <div class="flex items-start">
+                        <div class="text-2xl mr-4">🧩</div>
+                        <div>
+                            <h3 class="font-bold mb-2">Просто</h3>
+                            <p class="text-gray-600">Работаем по простой системе, обеспечивая непрерывный мониторинг и управление репутацией.</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="bg-white p-6 rounded-lg shadow-sm benefit-item">
                     <div class="flex items-start">
                         <div class="text-2xl mr-4">✅</div>
                         <div>
                             <h3 class="font-bold mb-2">Гарантировано</h3>
-                            <p class="text-gray-600 text-sm">Завоёвываем доверие потенциальных клиентов через создание положительного онлайн-образа.</p>
+                            <p class="text-gray-600">Завоёвываем доверие клиентов через создание положительного онлайн-образа.</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="bg-white p-6 rounded-lg shadow-sm benefit-item">
+                    <div class="flex items-start">
+                        <div class="text-2xl mr-4">🛡️</div>
+                        <div>
+                            <h3 class="font-bold mb-2">Проактивная защита</h3>
+                            <p class="text-gray-600">Не просто реагируем на негатив, но и предотвращаем его появление.</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="bg-white p-6 rounded-lg shadow-sm benefit-item">
+                    <div class="flex items-start">
+                        <div class="text-2xl mr-4">🎨</div>
+                        <div>
+                            <h3 class="font-bold mb-2">Индивидуальный подход</h3>
+                            <p class="text-gray-600">Разрабатываем стратегию с учётом специфики вашего бизнеса.</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="bg-white p-6 rounded-lg shadow-sm benefit-item">
+                    <div class="flex items-start">
+                        <div class="text-2xl mr-4">🔍</div>
+                        <div>
+                            <h3 class="font-bold mb-2">Прозрачность</h3>
+                            <p class="text-gray-600">Вы всегда в курсе состояния вашей репутации.</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="bg-white p-6 rounded-lg shadow-sm benefit-item">
+                    <div class="flex items-start">
+                        <div class="text-2xl mr-4">📈</div>
+                        <div>
+                            <h3 class="font-bold mb-2">Комплексные решения</h3>
+                            <p class="text-gray-600">Анализируем действия конкурентов для улучшения вашего онлайн-присутствия.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Репутация в надежных руках -->
+    <section class="py-12 bg-white">
+        <div class="container mx-auto px-4">
+            <div class="max-w-4xl mx-auto bg-purple-50 p-8 rounded-lg">
+                <h2 class="text-2xl font-bold text-center mb-6">🤝 Репутация вашего бизнеса в надёжных руках</h2>
+                <p class="text-lg text-center mb-6">🧩 Мы берём на себя управление вашей репутацией, чтобы вы могли сосредоточиться на развитии бизнеса</p>
+                
+                <div class="grid md:grid-cols-2 gap-6 mt-8">
+                    <div class="flex items-start">
+                        <div class="text-xl mr-4">🔍</div>
+                        <div>
+                            <h3 class="font-bold mb-2">Мониторинг отзывов</h3>
+                            <p class="text-gray-600">Круглосуточный контроль всех отзывов о вашем бизнесе.</p>
+                        </div>
+                    </div>
+                    
+                    <div class="flex items-start">
+                        <div class="text-xl mr-4">🧠</div>
+                        <div>
+                            <h3 class="font-bold mb-2">Анализ ситуации</h3>
+                            <p class="text-gray-600">Глубокий анализ всех упоминаний о вашей компании.</p>
+                        </div>
+                    </div>
+                    
+                    <div class="flex items-start">
+                        <div class="text-xl mr-4">🌟</div>
+                        <div>
+                            <h3 class="font-bold mb-2">Формирование положительного фона</h3>
+                            <p class="text-gray-600">Создаём позитивный образ вашего бизнеса.</p>
+                        </div>
+                    </div>
+                    
+                    <div class="flex items-start">
+                        <div class="text-xl mr-4">🕵️‍♂️</div>
+                        <div>
+                            <h3 class="font-bold mb-2">Мониторинг конкурентов</h3>
+                            <p class="text-gray-600">Анализируем действия ваших конкурентов.</p>
+                        </div>
+                    </div>
+                    
+                    <div class="flex items-start">
+                        <div class="text-xl mr-4">📈</div>
+                        <div>
+                            <h3 class="font-bold mb-2">Регулярные отчёты</h3>
+                            <p class="text-gray-600">Подробная аналитика по вашей репутации.</p>
+                        </div>
+                    </div>
+                    
+                    <div class="flex items-start">
+                        <div class="text-xl mr-4">💡</div>
+                        <div>
+                            <h3 class="font-bold mb-2">Поддержка специалистов</h3>
+                            <p class="text-gray-600">PR и SMM-менеджеры работают на ваш бизнес.</p>
                         </div>
                     </div>
                 </div>
@@ -209,10 +272,21 @@
             <h2 class="text-2xl font-bold text-center mb-8">❗ Почему репутация - это важно?</h2>
             
             <div class="max-w-3xl mx-auto bg-white p-6 rounded-lg shadow-sm">
-                <p class="mb-4">В современном мире более 90% людей читают отзывы прежде чем воспользоваться услугами какого-либо бизнеса или бренда.</p>
-                <p class="mb-4">Бизнесы ежедневно теряют клиентов из-за репутационных потерь. Один негатив может стоить вам десятков клиентов.</p>
-                <p class="mb-4">Большинство бизнесов не реагирует на негатив вовремя. Вместе с Репутация+ эта проблема решается.</p>
-                <p class="font-bold">Защита имиджа + Рост доверия = Больше клиентов.</p>
+                <p class="mb-4">В современном мире более <strong>90% людей</strong> читают отзывы прежде чем воспользоваться услугами какого-либо бизнеса или бренда.</p>
+                <p class="mb-4">Статистические данные действительно это подтверждают:</p>
+                <ul class="list-disc pl-5 mb-4 space-y-2">
+                    <li>Бизнесы ежедневно теряют клиентов из-за репутационных потерь</li>
+                    <li>Один негативный отзыв может стоить вам десятков клиентов</li>
+                    <li>Большинство бизнесов не реагирует на негатив вовремя</li>
+                </ul>
+                <p class="mb-4">С <strong>Репутация+</strong> эта проблема решается:</p>
+                <ul class="list-disc pl-5 mb-4 space-y-2">
+                    <li>У вас появится больше свободного времени</li>
+                    <li>Мы будем круглосуточно защищать ваш бизнес в сети</li>
+                    <li>Вы получите профессиональную поддержку</li>
+                </ul>
+                <p class="text-xl font-bold text-center mt-6">Защита имиджа + Рост доверия = <span class="text-purple-600">Больше клиентов</span></p>
+                <p class="text-center mt-2">Логичный вывод и гарантия надёжности вашего выбора</p>
             </div>
         </div>
     </section>
@@ -222,23 +296,127 @@
         <div class="container mx-auto px-4">
             <h2 class="text-2xl font-bold text-center mb-8">🧑‍💻 Как работать с нами?</h2>
             
-            <div class="grid md:grid-cols-3 gap-6 max-w-4xl mx-auto">
-                <div class="text-center">
-                    <div class="text-4xl mb-4">🔧</div>
-                    <h3 class="font-bold mb-2">Просто</h3>
+            <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-6xl mx-auto">
+                <div class="bg-purple-50 p-6 rounded-lg feature-card">
+                    <div class="text-3xl mb-3">🔧</div>
+                    <h3 class="text-lg font-bold mb-2">Просто</h3>
                     <p class="text-gray-600">Выберите нужный модуль и оформите заявку — больше никаких действий от вас не требуется.</p>
                 </div>
                 
-                <div class="text-center">
-                    <div class="text-4xl mb-4">⚡</div>
-                    <h3 class="font-bold mb-2">Быстро</h3>
+                <div class="bg-purple-50 p-6 rounded-lg feature-card">
+                    <div class="text-3xl mb-3">⚡</div>
+                    <h3 class="text-lg font-bold mb-2">Быстро</h3>
                     <p class="text-gray-600">Мы оперативно находим все отзывы, анализируем ситуацию и предоставляем отчёты.</p>
                 </div>
                 
-                <div class="text-center">
-                    <div class="text-4xl mb-4">🤖</div>
-                    <h3 class="font-bold mb-2">Автоматизировано</h3>
+                <div class="bg-purple-50 p-6 rounded-lg feature-card">
+                    <div class="text-3xl mb-3">🛡️</div>
+                    <h3 class="text-lg font-bold mb-2">Надёжно</h3>
+                    <p class="text-gray-600">Работаем по проверенной системе, обеспечивая вам спокойствие и уверенность.</p>
+                </div>
+                
+                <div class="bg-purple-50 p-6 rounded-lg feature-card">
+                    <div class="text-3xl mb-3">🤖</div>
+                    <h3 class="text-lg font-bold mb-2">Автоматизировано</h3>
                     <p class="text-gray-600">Вы спите — мы работаем. Наша система 24/7 следит за вашей репутацией.</p>
+                </div>
+            </div>
+            
+            <div class="mt-10 max-w-4xl mx-auto bg-white p-6 rounded-lg border border-purple-200">
+                <h3 class="text-xl font-bold mb-4 text-center">🧑‍💻 Привлечение специалистов</h3>
+                <p class="mb-4 text-center">Мы подключаем PR и SMM-менеджеров для анализа и улучшения ваших соцсетей и сайта.</p>
+                <p class="text-center font-bold">За это не нужно платить отдельно — все включено в стоимость модуля!</p>
+            </div>
+            
+            <div class="mt-10 max-w-4xl mx-auto bg-white p-6 rounded-lg border border-purple-200">
+                <h3 class="text-xl font-bold mb-4 text-center">📈 Поддержка роста бизнеса</h3>
+                <p class="text-center">Помогаем вашему бизнесу расти и не отвлекаться, берём на себя все задачи, связанные с репутацией.</p>
+            </div>
+            
+            <div class="mt-10 max-w-4xl mx-auto bg-white p-6 rounded-lg border border-purple-200">
+                <h3 class="text-xl font-bold mb-4 text-center">🌍 Полный контроль площадок</h3>
+                <p class="text-center mb-2">Отслеживаем ключевые площадки:</p>
+                <div class="flex flex-wrap justify-center gap-2">
+                    <span class="bg-purple-100 text-purple-800 px-3 py-1 rounded-full text-sm">Яндекс.Карты</span>
+                    <span class="bg-purple-100 text-purple-800 px-3 py-1 rounded-full text-sm">Google</span>
+                    <span class="bg-purple-100 text-purple-800 px-3 py-1 rounded-full text-sm">2ГИС</span>
+                    <span class="bg-purple-100 text-purple-800 px-3 py-1 rounded-full text-sm">Flamp</span>
+                    <span class="bg-purple-100 text-purple-800 px-3 py-1 rounded-full text-sm">Otzovik</span>
+                    <span class="bg-purple-100 text-purple-800 px-3 py-1 rounded-full text-sm">Соцсети</span>
+                </div>
+                <p class="text-center mt-4 font-bold">🔔 Мгновенно уведомляем о любом негативе!</p>
+            </div>
+            
+            <div class="mt-10 max-w-2xl mx-auto bg-purple-600 text-white p-6 rounded-lg text-center">
+                <h3 class="text-xl font-bold mb-2">🚀 Всё, что вам нужно сделать — это подключиться</h3>
+                <p>Остальное мы берём на себя, обеспечивая надёжное управление вашей репутацией.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Модули -->
+    <section class="py-12 bg-gray-50">
+        <div class="container mx-auto px-4">
+            <h2 class="text-2xl font-bold text-center mb-8">📦 Модули управления репутацией</h2>
+            
+            <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
+                <!-- Базовый -->
+                <div class="bg-white p-4 rounded-lg shadow-md border-t-4 border-purple-500 module-card">
+                    <h3 class="text-lg font-bold mb-2">💼 Базовый <span class="float-right">25 000 ₽/мес</span></h3>
+                    <ul class="text-sm space-y-2 mb-4">
+                        <li>✔️ Мониторинг отзывов</li>
+                        <li>✔️ Регулярные отчёты</li>
+                        <li>✔️ Реакция на негатив</li>
+                    </ul>
+                    <p class="text-xs text-gray-500 mb-3">⏱️ Быстрый старт. Для первого теста системы</p>
+                    <button class="w-full bg-purple-600 text-white py-2 rounded-lg font-medium hover:bg-purple-700 transition">
+                        Выбрать модуль
+                    </button>
+                </div>
+                
+                <!-- Базовый+ -->
+                <div class="bg-white p-4 rounded-lg shadow-md border-t-4 border-purple-600 module-card">
+                    <h3 class="text-lg font-bold mb-2">📊 Базовый+ <span class="float-right">35 000 ₽/мес</span></h3>
+                    <ul class="text-sm space-y-2 mb-4">
+                        <li>✔️ Всё из Базового</li>
+                        <li>➕ Доступ к отчёту от PR/SMM-менеджеров</li>
+                        <li>➕ Полная картина цифрового образа</li>
+                    </ul>
+                    <p class="text-xs text-gray-500 mb-3">📑 Для тех, кто хочет не только следить, но и развиваться</p>
+                    <button class="w-full bg-purple-600 text-white py-2 rounded-lg font-medium hover:bg-purple-700 transition">
+                        Выбрать модуль
+                    </button>
+                </div>
+                
+                <!-- Развитие -->
+                <div class="bg-white p-4 rounded-lg shadow-md border-t-4 border-purple-700 module-card">
+                    <h3 class="text-lg font-bold mb-2">🚀 Развитие <span class="float-right">50 000 ₽/мес</span></h3>
+                    <ul class="text-sm space-y-2 mb-4">
+                        <li>✔️ Всё из Базового+</li>
+                        <li>➕ Поддержка и рекомендации</li>
+                        <li>➕ Анализ конкурентов</li>
+                        <li>➕ Оптимизация соцсетей</li>
+                    </ul>
+                    <p class="text-xs text-gray-500 mb-3">Для тех, кто хочет выделяться в своей нише</p>
+                    <button class="w-full bg-purple-700 text-white py-2 rounded-lg font-medium hover:bg-purple-800 transition">
+                        Выбрать модуль
+                    </button>
+                </div>
+                
+                <!-- Максимум -->
+                <div class="bg-white p-4 rounded-lg shadow-md border-t-4 border-purple-800 module-card">
+                    <h3 class="text-lg font-bold mb-2">🏆 Максимум <span class="float-right">70 000 ₽/мес</span></h3>
+                    <ul class="text-sm space-y-2 mb-4">
+                        <li>✔️ Всё включено</li>
+                        <li>➕ Глубокая аналитика</li>
+                        <li>➕ Сопровождение</li>
+                        <li>➕ Приоритетная реакция</li>
+                        <li>➕ Личный менеджер</li>
+                    </ul>
+                    <p class="text-xs text-gray-500 mb-3">Лучший выбор для устойчивого роста и стабильной репутации</p>
+                    <button class="w-full bg-purple-800 text-white py-2 rounded-lg font-medium hover:bg-purple-900 transition">
+                        Выбрать модуль
+                    </button>
                 </div>
             </div>
         </div>
@@ -270,8 +448,8 @@
                             <input type="tel" name="phone" placeholder="Телефон" class="w-full px-4 py-2 border rounded-lg" required>
                         </div>
                         
-                        <button type="submit" class="w-full gradient-bg text-white py-2 px-6 rounded-lg font-bold">
-                            🛡️ Начать защиту
+                        <button type="submit" class="w-full gradient-bg text-white py-2 px-6 rounded-lg font-bold hover:opacity-90 transition">
+                            🛡️ Начать защиту репутации
                         </button>
                     </form>
                 </div>
@@ -286,7 +464,7 @@
                 <a href="#" class="text-gray-400 hover:text-white social-icon"><i class="fab fa-telegram"></i></a>
                 <a href="#" class="text-gray-400 hover:text-white social-icon"><i class="fab fa-whatsapp"></i></a>
             </div>
-            <p class="text-gray-400 text-sm">© 2023 Репутация+ | Цифровой щит вашего бизнеса</p>
+            <p class="text-gray-400 text-sm">© 2023 Репутация+ | Комплексное управление репутацией бизнеса</p>
         </div>
     </footer>
 
@@ -298,9 +476,11 @@
                 method: 'POST',
                 body: new FormData(this)
             })
-            .then(() => alert('✅ Спасибо! Заявка отправлена. Мы скоро свяжемся!'))
+            .then(() => {
+                alert('✅ Спасибо! Заявка отправлена. Мы скоро свяжемся с вами!');
+                this.reset();
+            })
             .catch(() => alert('⚠️ Ошибка отправки. Пожалуйста, попробуйте позже.'));
-            this.reset();
         });
         
         // Анимация при скролле
@@ -312,7 +492,7 @@
             });
         }, { threshold: 0.1 });
         
-        document.querySelectorAll('section, .module-card, .feature-card, .benefit-card').forEach(el => observer.observe(el));
+        document.querySelectorAll('section, .feature-card, .benefit-item, .module-card').forEach(el => observer.observe(el));
     </script>
 </body>
 </html>
