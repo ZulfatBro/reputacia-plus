@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Репутация+</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'Inter', sans-serif; background: #0e0e0e; color: white; line-height: 1.6; }
+    header, section { padding: 60px 20px; max-width: 1000px; margin: auto; }
+    header h1 { font-size: 2.5rem; margin-bottom: 20px; }
+    header p { font-size: 1.2rem; }
+    .tariffs { display: grid; gap: 20px; grid-template-columns: 1fr; margin-top: 40px; }
+    .tariff { background: #1e1e1e; padding: 30px; border-radius: 12px; border: 1px solid #333; }
+    .tariff h2 { font-size: 1.5rem; margin-bottom: 10px; }
+    .tariff p { margin: 5px 0; }
+    .price { font-size: 1.3rem; color: #66ffcc; margin-top: 10px; }
+    form { margin-top: 40px; background: #1e1e1e; padding: 30px; border-radius: 12px; }
+    input, textarea, button { width: 100%; padding: 10px; margin-top: 10px; border: none; border-radius: 6px; }
+    input, textarea { background: #333; color: white; }
+    button { background: #66ffcc; color: #000; font-weight: 600; cursor: pointer; }
+    footer { text-align: center; font-size: 0.9rem; padding: 40px 0; color: #888; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Репутация+</h1>
+    <p>Надёжное решение по управлению репутацией. Мы поможем вам отслеживать и улучшать отзывы на ключевых платформах.</p>
+  </header>
+
+  <section>
+    <h2>Тарифы</h2>
+    <div class="tariffs">
+      <div class="tariff">
+        <h2>Базовый 💼 — 25 000 ₽</h2>
+        <p>✔️ Мониторинг отзывов</p>
+        <p>✔️ Регулярные отчёты (раз в неделю / 2 недели / месяц)</p>
+        <p>✔️ Реакция на негатив</p>
+        <p class="price">⏱️ Быстрый старт</p>
+      </div>
+      <div class="tariff">
+        <h2>Базовый+ 📊 — 35 000 ₽</h2>
+        <p>✔️ Всё из Базового</p>
+        <p>➕ Отчёт от PR/SMM-менеджеров</p>
+        <p>📑 Полная картина вашего бизнеса</p>
+      </div>
+      <div class="tariff">
+        <h2>Максимум 🤖 — 70 000 ₽</h2>
+        <p>✔️ Всё из Базового+📊</p>
+        <p>➕ Глубокая аналитика</p>
+        <p>➕ Личный менеджер</p>
+        <p>➕ Приоритетная реакция</p>
+        <p>➕ Сопровождение и поддержка</p>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Оставьте заявку</h2>
+    <form action="https://formspree.io/f/yourformid" method="POST">
+      <input type="text" name="name" placeholder="Ваше имя" required />
+      <input type="email" name="email" placeholder="Ваш email" required />
+      <textarea name="message" rows="4" placeholder="Какой тариф вас интересует?" required></textarea>
+      <button type="submit">Отправить</button>
+    </form>
+  </section>
+
+  <footer>
+    © 2025 Репутация+. Все права защищены.
+  </footer>
+</body>
+</html>
