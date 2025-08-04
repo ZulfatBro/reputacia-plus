@@ -3,53 +3,29 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Репутация+ | Защита репутации вашего бизнеса</title>
+    <title>Репутация+ | Цифровой щит вашего бизнеса</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700;800&display=swap');
-        
-        body {
-            font-family: 'Montserrat', sans-serif;
-            background-color: #f8f9fa;
+        @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700&display=swap');
+        body { font-family: 'Montserrat', sans-serif; }
+        .gradient-bg { background: linear-gradient(135deg, #6e48aa 0%, #9d50bb 100%); }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
         }
-        
-        .gradient-bg {
-            background: linear-gradient(135deg, #6e48aa 0%, #9d50bb 100%);
-        }
-        
-        .pulse {
-            animation: pulse 2s infinite;
-        }
-        
-        @keyframes pulse {
-            0% {
-                transform: scale(1);
-                box-shadow: 0 0 0 0 rgba(157, 80, 187, 0.7);
-            }
-            70% {
-                transform: scale(1.05);
-                box-shadow: 0 0 0 15px rgba(157, 80, 187, 0);
-            }
-            100% {
-                transform: scale(1);
-                box-shadow: 0 0 0 0 rgba(157, 80, 187, 0);
-            }
-        }
-        
-        .checkbox-module:checked + label {
-            background-color: #9d50bb;
-            color: white;
-            border-color: #9d50bb;
-        }
-        
-        .contact-method:checked + label {
-            border-color: #9d50bb;
-            box-shadow: 0 0 0 2px rgba(157, 80, 187, 0.5);
-        }
+        .animate-fadeIn { animation: fadeIn 0.6s ease-out forwards; }
+        .social-icon { transition: transform 0.3s; }
+        .social-icon:hover { transform: scale(1.1); }
+        .module-card { transition: all 0.3s; }
+        .module-card:hover { transform: translateY(-5px); box-shadow: 0 10px 20px rgba(0,0,0,0.1); }
+        .feature-card { transition: all 0.3s; }
+        .feature-card:hover { transform: scale(1.02); }
+        .benefit-card { transition: all 0.3s; }
+        .benefit-card:hover { transform: translateY(-3px); box-shadow: 0 5px 15px rgba(0,0,0,0.1); }
     </style>
 </head>
-<body>
+<body class="bg-gray-50">
     <!-- Шапка -->
     <header class="gradient-bg text-white">
         <div class="container mx-auto px-4 py-6">
@@ -60,366 +36,283 @@
                     </div>
                     <h1 class="text-2xl font-bold">Репутация+</h1>
                 </div>
-                <nav class="hidden md:block">
-                    <ul class="flex space-x-8">
-                        <li><a href="#services" class="hover:text-purple-200 transition">Услуги</a></li>
-                        <li><a href="#advantages" class="hover:text-purple-200 transition">Преимущества</a></li>
-                        <li><a href="#modules" class="hover:text-purple-200 transition">Модули</a></li>
-                        <li><a href="#contact" class="hover:text-purple-200 transition">Контакты</a></li>
-                    </ul>
-                </nav>
-                <button class="md:hidden text-2xl">
-                    <i class="fas fa-bars"></i>
-                </button>
+                <div class="flex space-x-4">
+                    <a href="#" class="text-white hover:text-purple-200 social-icon"><i class="fab fa-telegram"></i></a>
+                    <a href="#" class="text-white hover:text-purple-200 social-icon"><i class="fab fa-whatsapp"></i></a>
+                </div>
             </div>
             
-            <div class="mt-16 mb-20 text-center">
-                <h2 class="text-4xl md:text-5xl font-bold mb-6">Защитите репутацию вашего бизнеса</h2>
-                <p class="text-xl md:text-2xl mb-8 max-w-3xl mx-auto">Мы мониторим отзывы и формируем положительный образ вашей компании в интернете</p>
-                <a href="#contact" class="bg-white text-purple-800 font-bold py-3 px-8 rounded-full text-lg hover:bg-purple-100 transition duration-300 inline-block pulse">
-                    Оставить заявку
+            <div class="mt-12 mb-16 text-center">
+                <h2 class="text-3xl md:text-4xl font-bold mb-4 animate-fadeIn">🔒 Защити свой бизнес не отвлекаясь</h2>
+                <p class="text-lg mb-6 max-w-2xl mx-auto animate-fadeIn" style="animation-delay:0.2s">«Репутация+» — это цифровой щит вашего бизнеса. Мы следим за репутацией и помогаем вам расти, даже когда вы спите.</p>
+                <a href="#contact" class="bg-white text-purple-800 font-bold py-2 px-6 rounded-full hover:bg-purple-100 transition inline-block animate-fadeIn" style="animation-delay:0.4s">
+                    ✅ Начать защиту
                 </a>
             </div>
         </div>
     </header>
 
-    <!-- О сервисе -->
-    <section class="py-16 bg-white" id="services">
-        <div class="container mx-auto px-4">
-            <h2 class="text-3xl font-bold text-center mb-12 text-gray-800">Что мы делаем для вашего бизнеса</h2>
-            
-            <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
-                <div class="bg-purple-50 p-6 rounded-lg border border-purple-100">
-                    <div class="bg-purple-100 text-purple-800 w-14 h-14 rounded-full flex items-center justify-center mb-4">
-                        <i class="fas fa-search text-2xl"></i>
-                    </div>
-                    <h3 class="text-xl font-bold mb-3 text-gray-800">Мониторинг отзывов</h3>
-                    <p class="text-gray-600">Отслеживаем отзывы на Яндекс, Google, 2ГИС, Flamp, Otzovik и другие площадки</p>
-                </div>
-                
-                <div class="bg-purple-50 p-6 rounded-lg border border-purple-100">
-                    <div class="bg-purple-100 text-purple-800 w-14 h-14 rounded-full flex items-center justify-center mb-4">
-                        <i class="fas fa-shield-alt text-2xl"></i>
-                    </div>
-                    <h3 class="text-xl font-bold mb-3 text-gray-800">Защита репутации</h3>
-                    <p class="text-gray-600">Оперативно выявляем негативные отзывы и минимизируем их влияние</p>
-                </div>
-                
-                <div class="bg-purple-50 p-6 rounded-lg border border-purple-100">
-                    <div class="bg-purple-100 text-purple-800 w-14 h-14 rounded-full flex items-center justify-center mb-4">
-                        <i class="fas fa-chart-line text-2xl"></i>
-                    </div>
-                    <h3 class="text-xl font-bold mb-3 text-gray-800">Аналитика и отчеты</h3>
-                    <p class="text-gray-600">Предоставляем полную аналитику по динамике репутации с течением времени</p>
-                </div>
-                
-                <div class="bg-purple-50 p-6 rounded-lg border border-purple-100">
-                    <div class="bg-purple-100 text-purple-800 w-14 h-14 rounded-full flex items-center justify-center mb-4">
-                        <i class="fas fa-smile text-2xl"></i>
-                    </div>
-                    <h3 class="text-xl font-bold mb-3 text-gray-800">Положительный фон</h3>
-                    <p class="text-gray-600">Формируем положительный информационный фон вокруг вашего бизнеса</p>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <!-- Преимущества -->
-    <section class="py-16 bg-gray-50" id="advantages">
-        <div class="container mx-auto px-4">
-            <h2 class="text-3xl font-bold text-center mb-12 text-gray-800">Почему выбирают нас</h2>
-            
-            <div class="grid md:grid-cols-2 gap-8 items-center">
-                <div>
-                    <div class="bg-white p-6 rounded-lg shadow-lg mb-6">
-                        <div class="flex items-start">
-                            <div class="bg-purple-100 text-purple-800 w-10 h-10 rounded-full flex items-center justify-center mr-4 flex-shrink-0">
-                                <i class="fas fa-check"></i>
-                            </div>
-                            <div>
-                                <h3 class="text-xl font-bold mb-2 text-gray-800">Не отвлекаем от работы</h3>
-                                <p class="text-gray-600">Вы занимаетесь бизнесом, а мы бережём его лицо в интернете</p>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div class="bg-white p-6 rounded-lg shadow-lg mb-6">
-                        <div class="flex items-start">
-                            <div class="bg-purple-100 text-purple-800 w-10 h-10 rounded-full flex items-center justify-center mr-4 flex-shrink-0">
-                                <i class="fas fa-check"></i>
-                            </div>
-                            <div>
-                                <h3 class="text-xl font-bold mb-2 text-gray-800">Гибкий график отчетов</h3>
-                                <p class="text-gray-600">Выбирайте частоту отчетов: раз в неделю, две недели или месяц</p>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div class="bg-white p-6 rounded-lg shadow-lg">
-                        <div class="flex items-start">
-                            <div class="bg-purple-100 text-purple-800 w-10 h-10 rounded-full flex items-center justify-center mr-4 flex-shrink-0">
-                                <i class="fas fa-check"></i>
-                            </div>
-                            <div>
-                                <h3 class="text-xl font-bold mb-2 text-gray-800">Комплексный подход</h3>
-                                <p class="text-gray-600">Не просто мониторим, а работаем с каждым негативным отзывом</p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="bg-white p-8 rounded-lg shadow-lg">
-                    <div class="relative pb-3/4 h-64 md:h-96 bg-purple-50 rounded-lg flex items-center justify-center">
-                        <div class="absolute inset-0 flex items-center justify-center">
-                            <div class="w-24 h-24 bg-purple-200 rounded-full opacity-50 absolute top-1/4 left-1/4"></div>
-                            <div class="w-32 h-32 bg-purple-300 rounded-full opacity-50 absolute bottom-1/4 right-1/4"></div>
-                            <div class="relative z-10 text-center p-6">
-                                <div class="bg-white p-4 rounded-lg shadow-md inline-block">
-                                    <i class="fas fa-star text-yellow-400 text-4xl mb-2"></i>
-                                    <p class="font-bold text-purple-800">Рейтинг 4.9</p>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </section>
-
     <!-- Модули -->
-    <section class="py-16 bg-white" id="modules">
+    <section class="py-12 bg-white">
         <div class="container mx-auto px-4">
-            <h2 class="text-3xl font-bold text-center mb-12 text-gray-800">Выберите нужные модули</h2>
+            <h2 class="text-2xl font-bold text-center mb-8">💰 Тарифные планы</h2>
+            
+            <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
+                <!-- Базовый -->
+                <div class="bg-white p-4 rounded-lg shadow-md border-t-4 border-purple-500 module-card">
+                    <h3 class="text-lg font-bold mb-2">💼 Базовый <span class="float-right">25 000 ₽</span></h3>
+                    <ul class="text-sm space-y-2 mb-4">
+                        <li>✔️ Мониторинг отзывов</li>
+                        <li>✔️ Регулярные отчёты</li>
+                        <li>✔️ Реакция на негатив</li>
+                    </ul>
+                    <p class="text-xs text-gray-500 mb-3">⏱️ Быстрый старт. Для первого теста</p>
+                    <button class="w-full bg-purple-600 text-white py-1 rounded font-medium">Выбрать</button>
+                </div>
+                
+                <!-- Базовый+ -->
+                <div class="bg-white p-4 rounded-lg shadow-md border-t-4 border-purple-600 module-card">
+                    <h3 class="text-lg font-bold mb-2">📊 Базовый+ <span class="float-right">35 000 ₽</span></h3>
+                    <ul class="text-sm space-y-2 mb-4">
+                        <li>✔️ Всё из Базового</li>
+                        <li>➕ Отчёты от SMM-менеджеров</li>
+                    </ul>
+                    <p class="text-xs text-gray-500 mb-3">📑 Для развития бизнеса</p>
+                    <button class="w-full bg-purple-600 text-white py-1 rounded font-medium">Выбрать</button>
+                </div>
+                
+                <!-- Развитие -->
+                <div class="bg-white p-4 rounded-lg shadow-md border-t-4 border-purple-700 module-card">
+                    <h3 class="text-lg font-bold mb-2">🚀 Развитие <span class="float-right">50 000 ₽</span></h3>
+                    <ul class="text-sm space-y-2 mb-4">
+                        <li>✔️ Всё из Базового+</li>
+                        <li>➕ Оптимизация соцсетей</li>
+                        <li>➕ Анализ конкурентов</li>
+                    </ul>
+                    <button class="w-full bg-purple-700 text-white py-1 rounded font-medium">Выбрать</button>
+                </div>
+                
+                <!-- Максимум -->
+                <div class="bg-white p-4 rounded-lg shadow-md border-t-4 border-purple-800 module-card">
+                    <h3 class="text-lg font-bold mb-2">🏆 Максимум <span class="float-right">70 000 ₽</span></h3>
+                    <ul class="text-sm space-y-2 mb-4">
+                        <li>✔️ Всё включено</li>
+                        <li>➕ Глубокая аналитика</li>
+                        <li>➕ Личный менеджер</li>
+                        <li>➕ Приоритетная поддержка</li>
+                    </ul>
+                    <button class="w-full bg-purple-800 text-white py-1 rounded font-medium">Выбрать</button>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Основные преимущества -->
+    <section class="py-12 bg-gray-50">
+        <div class="container mx-auto px-4">
+            <h2 class="text-2xl font-bold text-center mb-8">✅ Преимущества работы с нами</h2>
+            
+            <div class="grid md:grid-cols-3 gap-6">
+                <div class="bg-white p-6 rounded-lg shadow-sm benefit-card">
+                    <div class="text-3xl mb-3">⚡</div>
+                    <h3 class="text-lg font-bold mb-2">Быстрая реакция</h3>
+                    <p class="text-gray-600">Оперативно находим негативные отзывы и минимизируем их влияние на репутацию вашего бизнеса.</p>
+                </div>
+                
+                <div class="bg-white p-6 rounded-lg shadow-sm benefit-card">
+                    <div class="text-3xl mb-3">📊</div>
+                    <h3 class="text-lg font-bold mb-2">Регулярные отчёты</h3>
+                    <p class="text-gray-600">Предоставляем регулярные отчёты о состоянии вашей репутации на ключевых площадках.</p>
+                </div>
+                
+                <div class="bg-white p-6 rounded-lg shadow-sm benefit-card">
+                    <div class="text-3xl mb-3">📈</div>
+                    <h3 class="text-lg font-bold mb-2">Комплексный подход</h3>
+                    <p class="text-gray-600">Помимо работы с отзывами, подключаем PR и SMM-менеджеров для анализа и улучшения ваших соцсетей и сайтов.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Надежное решение -->
+    <section class="py-12 bg-white">
+        <div class="container mx-auto px-4">
+            <h2 class="text-2xl font-bold text-center mb-8">🛡️ Надёжное решение по управлению репутацией</h2>
             
             <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-                <div>
-                    <input type="checkbox" id="module1" class="hidden checkbox-module">
-                    <label for="module1" class="block p-6 border-2 border-gray-200 rounded-lg cursor-pointer hover:border-purple-300 transition">
-                        <h3 class="text-xl font-bold mb-3 text-gray-800">Базовый мониторинг</h3>
-                        <p class="text-gray-600 mb-4">Отслеживание отзывов на основных площадках (Яндекс, Google, 2ГИС)</p>
-                        <span class="text-purple-600 font-bold">✓ Включено</span>
-                    </label>
+                <div class="bg-purple-50 p-6 rounded-lg feature-card">
+                    <div class="flex items-start">
+                        <div class="text-2xl mr-4">⚡</div>
+                        <div>
+                            <h3 class="font-bold mb-2">Быстро</h3>
+                            <p class="text-gray-600 text-sm">Мы оперативно находим негативные отзывы о вашем бизнесе на ключевых площадках.</p>
+                        </div>
+                    </div>
                 </div>
                 
-                <div>
-                    <input type="checkbox" id="module2" class="hidden checkbox-module">
-                    <label for="module2" class="block p-6 border-2 border-gray-200 rounded-lg cursor-pointer hover:border-purple-300 transition">
-                        <h3 class="text-xl font-bold mb-3 text-gray-800">Расширенный мониторинг</h3>
-                        <p class="text-gray-600 mb-4">Добавление нишевых площадок (Flamp, Otzovik, Отзовик и другие)</p>
-                        <span class="text-purple-600 font-bold">✓ Включено</span>
-                    </label>
+                <div class="bg-purple-50 p-6 rounded-lg feature-card">
+                    <div class="flex items-start">
+                        <div class="text-2xl mr-4">🧠</div>
+                        <div>
+                            <h3 class="font-bold mb-2">Нейро-технологично</h3>
+                            <p class="text-gray-600 text-sm">Анализируем ситуацию и помогаем снизить влияние негатива. Корреляция с помощью нейросетей.</p>
+                        </div>
+                    </div>
                 </div>
                 
-                <div>
-                    <input type="checkbox" id="module3" class="hidden checkbox-module">
-                    <label for="module3" class="block p-6 border-2 border-gray-200 rounded-lg cursor-pointer hover:border-purple-300 transition">
-                        <h3 class="text-xl font-bold mb-3 text-gray-800">Автоответы</h3>
-                        <p class="text-gray-600 mb-4">Автоматические ответы на отзывы по заданным шаблонам</p>
-                        <span class="text-purple-600 font-bold">✓ Включено</span>
-                    </label>
+                <div class="bg-purple-50 p-6 rounded-lg feature-card">
+                    <div class="flex items-start">
+                        <div class="text-2xl mr-4">🎯</div>
+                        <div>
+                            <h3 class="font-bold mb-2">Эффективно</h3>
+                            <p class="text-gray-600 text-sm">Формируем положительный фон вокруг вашей компании, создавая позитивный онлайн-образ.</p>
+                        </div>
+                    </div>
                 </div>
                 
-                <div>
-                    <input type="checkbox" id="module4" class="hidden checkbox-module">
-                    <label for="module4" class="block p-6 border-2 border-gray-200 rounded-lg cursor-pointer hover:border-purple-300 transition">
-                        <h3 class="text-xl font-bold mb-3 text-gray-800">Генерация позитивных отзывов</h3>
-                        <p class="text-gray-600 mb-4">Инициация положительных откликов от реальных клиентов</p>
-                        <span class="text-purple-600 font-bold">✓ Включено</span>
-                    </label>
+                <div class="bg-purple-50 p-6 rounded-lg feature-card">
+                    <div class="flex items-start">
+                        <div class="text-2xl mr-4">📊</div>
+                        <div>
+                            <h3 class="font-bold mb-2">Отчётность</h3>
+                            <p class="text-gray-600 text-sm">Предоставляем регулярные отчёты о состоянии вашей репутации.</p>
+                        </div>
+                    </div>
                 </div>
                 
-                <div>
-                    <input type="checkbox" id="module5" class="hidden checkbox-module">
-                    <label for="module5" class="block p-6 border-2 border-gray-200 rounded-lg cursor-pointer hover:border-purple-300 transition">
-                        <h3 class="text-xl font-bold mb-3 text-gray-800">Глубокий анализ тональности</h3>
-                        <p class="text-gray-600 mb-4">Анализ эмоциональной окраски отзывов и выявление скрытых проблем</p>
-                        <span class="text-purple-600 font-bold">✓ Включено</span>
-                    </label>
+                <div class="bg-purple-50 p-6 rounded-lg feature-card">
+                    <div class="flex items-start">
+                        <div class="text-2xl mr-4">🤝</div>
+                        <div>
+                            <h3 class="font-bold mb-2">Заботливо</h3>
+                            <p class="text-gray-600 text-sm">Помогаем бизнесу расти, освобождая вас от забот, связанных с репутацией.</p>
+                        </div>
+                    </div>
                 </div>
                 
-                <div>
-                    <input type="checkbox" id="module6" class="hidden checkbox-module">
-                    <label for="module6" class="block p-6 border-2 border-gray-200 rounded-lg cursor-pointer hover:border-purple-300 transition">
-                        <h3 class="text-xl font-bold mb-3 text-gray-800">Кризисный менеджмент</h3>
-                        <p class="text-gray-600 mb-4">Экстренные меры при волне негатива или скандале</p>
-                        <span class="text-purple-600 font-bold">✓ Включено</span>
-                    </label>
+                <div class="bg-purple-50 p-6 rounded-lg feature-card">
+                    <div class="flex items-start">
+                        <div class="text-2xl mr-4">✅</div>
+                        <div>
+                            <h3 class="font-bold mb-2">Гарантировано</h3>
+                            <p class="text-gray-600 text-sm">Завоёвываем доверие потенциальных клиентов через создание положительного онлайн-образа.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Почему репутация важна -->
+    <section class="py-12 bg-gray-50">
+        <div class="container mx-auto px-4">
+            <h2 class="text-2xl font-bold text-center mb-8">❗ Почему репутация - это важно?</h2>
+            
+            <div class="max-w-3xl mx-auto bg-white p-6 rounded-lg shadow-sm">
+                <p class="mb-4">В современном мире более 90% людей читают отзывы прежде чем воспользоваться услугами какого-либо бизнеса или бренда.</p>
+                <p class="mb-4">Бизнесы ежедневно теряют клиентов из-за репутационных потерь. Один негатив может стоить вам десятков клиентов.</p>
+                <p class="mb-4">Большинство бизнесов не реагирует на негатив вовремя. Вместе с Репутация+ эта проблема решается.</p>
+                <p class="font-bold">Защита имиджа + Рост доверия = Больше клиентов.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Как работать с нами -->
+    <section class="py-12 bg-white">
+        <div class="container mx-auto px-4">
+            <h2 class="text-2xl font-bold text-center mb-8">🧑‍💻 Как работать с нами?</h2>
+            
+            <div class="grid md:grid-cols-3 gap-6 max-w-4xl mx-auto">
+                <div class="text-center">
+                    <div class="text-4xl mb-4">🔧</div>
+                    <h3 class="font-bold mb-2">Просто</h3>
+                    <p class="text-gray-600">Выберите нужный модуль и оформите заявку — больше никаких действий от вас не требуется.</p>
+                </div>
+                
+                <div class="text-center">
+                    <div class="text-4xl mb-4">⚡</div>
+                    <h3 class="font-bold mb-2">Быстро</h3>
+                    <p class="text-gray-600">Мы оперативно находим все отзывы, анализируем ситуацию и предоставляем отчёты.</p>
+                </div>
+                
+                <div class="text-center">
+                    <div class="text-4xl mb-4">🤖</div>
+                    <h3 class="font-bold mb-2">Автоматизировано</h3>
+                    <p class="text-gray-600">Вы спите — мы работаем. Наша система 24/7 следит за вашей репутацией.</p>
                 </div>
             </div>
         </div>
     </section>
 
     <!-- Обратная связь -->
-    <section class="py-16 gradient-bg text-white" id="contact">
+    <section class="py-12 gradient-bg text-white" id="contact">
         <div class="container mx-auto px-4">
-            <h2 class="text-3xl font-bold text-center mb-12">Готовы защитить репутацию вашего бизнеса?</h2>
+            <h2 class="text-2xl font-bold text-center mb-8">🚀 Готовы начать?</h2>
             
-            <div class="max-w-3xl mx-auto bg-white rounded-lg shadow-xl overflow-hidden">
-                <div class="md:flex">
-                    <div class="md:w-1/2 bg-purple-700 p-8 flex flex-col justify-center">
-                        <h3 class="text-2xl font-bold mb-4">Свяжитесь с нами</h3>
-                        <p class="mb-6 text-purple-100">Оставьте заявку, и мы подберем оптимальное решение для вашего бизнеса</p>
+            <div class="max-w-md mx-auto bg-white rounded-lg shadow-lg overflow-hidden">
+                <div class="p-6 text-gray-800">
+                    <form id="contactForm" action="https://formsubmit.co/zulfat-ilyasov@mail.ru" method="POST">
+                        <input type="hidden" name="_captcha" value="false">
                         
-                        <div class="space-y-4">
-                            <div class="flex items-center">
-                                <div class="bg-purple-600 p-2 rounded-full mr-3">
-                                    <i class="fas fa-phone"></i>
-                                </div>
-                                <span>+7 (XXX) XXX-XX-XX</span>
-                            </div>
-                            <div class="flex items-center">
-                                <div class="bg-purple-600 p-2 rounded-full mr-3">
-                                    <i class="fas fa-envelope"></i>
-                                </div>
-                                <span>info@reputaciya-plus.ru</span>
-                            </div>
-                            <div class="flex items-center">
-                                <div class="bg-purple-600 p-2 rounded-full mr-3">
-                                    <i class="fas fa-map-marker-alt"></i>
-                                </div>
-                                <span>Ваш город, ул. Примерная, 123</span>
-                            </div>
+                        <div class="mb-4">
+                            <input type="text" name="name" placeholder="Ваше имя" class="w-full px-4 py-2 border rounded-lg" required>
                         </div>
-                    </div>
-                    
-                    <div class="md:w-1/2 p-8 text-gray-800">
-                        <form id="contactForm">
-                            <div class="mb-4">
-                                <label for="name" class="block mb-2 font-medium">Ваше имя</label>
-                                <input type="text" id="name" class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500" required>
-                            </div>
-                            
-                            <div class="mb-4">
-                                <label for="company" class="block mb-2 font-medium">Название компании</label>
-                                <input type="text" id="company" class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500" required>
-                            </div>
-                            
-                            <div class="mb-4">
-                                <label for="email" class="block mb-2 font-medium">Email</label>
-                                <input type="email" id="email" class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500" required>
-                            </div>
-                            
-                            <div class="mb-4">
-                                <label for="phone" class="block mb-2 font-medium">Телефон</label>
-                                <input type="tel" id="phone" class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500" required>
-                            </div>
-                            
-                            <div class="mb-6">
-                                <label class="block mb-2 font-medium">Предпочтительный способ связи</label>
-                                <div class="grid grid-cols-2 gap-3">
-                                    <div>
-                                        <input type="radio" id="contactPhone" name="contactMethod" value="phone" class="hidden contact-method" checked>
-                                        <label for="contactPhone" class="block p-3 border border-gray-200 rounded-lg cursor-pointer text-center">
-                                            <i class="fas fa-phone mb-1"></i> Звонок
-                                        </label>
-                                    </div>
-                                    <div>
-                                        <input type="radio" id="contactEmail" name="contactMethod" value="email" class="hidden contact-method">
-                                        <label for="contactEmail" class="block p-3 border border-gray-200 rounded-lg cursor-pointer text-center">
-                                            <i class="fas fa-envelope mb-1"></i> Email
-                                        </label>
-                                    </div>
-                                    <div>
-                                        <input type="radio" id="contactTelegram" name="contactMethod" value="telegram" class="hidden contact-method">
-                                        <label for="contactTelegram" class="block p-3 border border-gray-200 rounded-lg cursor-pointer text-center">
-                                            <i class="fab fa-telegram mb-1"></i> Telegram
-                                        </label>
-                                    </div>
-                                    <div>
-                                        <input type="radio" id="contactWhatsApp" name="contactMethod" value="whatsapp" class="hidden contact-method">
-                                        <label for="contactWhatsApp" class="block p-3 border border-gray-200 rounded-lg cursor-pointer text-center">
-                                            <i class="fab fa-whatsapp mb-1"></i> WhatsApp
-                                        </label>
-                                    </div>
-                                </div>
-                            </div>
-                            
-                            <button type="submit" class="w-full gradient-bg text-white py-3 px-6 rounded-lg font-bold hover:opacity-90 transition duration-300">
-                                Отправить заявку
-                            </button>
-                        </form>
-                    </div>
+                        
+                        <div class="mb-4">
+                            <input type="text" name="company" placeholder="Компания" class="w-full px-4 py-2 border rounded-lg" required>
+                        </div>
+                        
+                        <div class="mb-4">
+                            <input type="email" name="email" placeholder="Email" class="w-full px-4 py-2 border rounded-lg" required>
+                        </div>
+                        
+                        <div class="mb-4">
+                            <input type="tel" name="phone" placeholder="Телефон" class="w-full px-4 py-2 border rounded-lg" required>
+                        </div>
+                        
+                        <button type="submit" class="w-full gradient-bg text-white py-2 px-6 rounded-lg font-bold">
+                            🛡️ Начать защиту
+                        </button>
+                    </form>
                 </div>
             </div>
         </div>
     </section>
 
     <!-- Футер -->
-    <footer class="bg-gray-900 text-white py-8">
-        <div class="container mx-auto px-4">
-            <div class="flex flex-col md:flex-row justify-between items-center">
-                <div class="mb-4 md:mb-0">
-                    <div class="flex items-center">
-                        <div class="bg-white text-purple-800 font-bold rounded-full w-10 h-10 flex items-center justify-center mr-3">
-                            <span class="text-lg">R+</span>
-                        </div>
-                        <h2 class="text-xl font-bold">Репутация+</h2>
-                    </div>
-                    <p class="text-gray-400 mt-2">Защита репутации вашего бизнеса</p>
-                </div>
-                
-                <div class="flex space-x-6">
-                    <a href="#" class="text-gray-400 hover:text-white transition">
-                        <i class="fab fa-facebook-f text-xl"></i>
-                    </a>
-                    <a href="#" class="text-gray-400 hover:text-white transition">
-                        <i class="fab fa-instagram text-xl"></i>
-                    </a>
-                    <a href="#" class="text-gray-400 hover:text-white transition">
-                        <i class="fab fa-telegram text-xl"></i>
-                    </a>
-                    <a href="#" class="text-gray-400 hover:text-white transition">
-                        <i class="fab fa-whatsapp text-xl"></i>
-                    </a>
-                </div>
+    <footer class="bg-gray-900 text-white py-6">
+        <div class="container mx-auto px-4 text-center">
+            <div class="flex justify-center space-x-6 mb-4">
+                <a href="#" class="text-gray-400 hover:text-white social-icon"><i class="fab fa-telegram"></i></a>
+                <a href="#" class="text-gray-400 hover:text-white social-icon"><i class="fab fa-whatsapp"></i></a>
             </div>
-            
-            <div class="border-t border-gray-800 mt-8 pt-8 text-center text-gray-400">
-                <p>© 2023 Репутация+. Все права защищены.</p>
-            </div>
+            <p class="text-gray-400 text-sm">© 2023 Репутация+ | Цифровой щит вашего бизнеса</p>
         </div>
     </footer>
 
     <script>
-        // Обработка формы
+        // Форма отправки на zulfat-ilyasov@mail.ru
         document.getElementById('contactForm').addEventListener('submit', function(e) {
             e.preventDefault();
-            
-            // Собираем данные формы
-            const formData = {
-                name: document.getElementById('name').value,
-                company: document.getElementById('company').value,
-                email: document.getElementById('email').value,
-                phone: document.getElementById('phone').value,
-                contactMethod: document.querySelector('input[name="contactMethod"]:checked').value
-            };
-            
-            // Здесь можно добавить отправку данных на сервер
-            console.log('Форма отправлена:', formData);
-            
-            // Показываем уведомление
-            alert('Спасибо за вашу заявку! Мы свяжемся с вами в ближайшее время.');
-            
-            // Очищаем форму
+            fetch(this.action, {
+                method: 'POST',
+                body: new FormData(this)
+            })
+            .then(() => alert('✅ Спасибо! Заявка отправлена. Мы скоро свяжемся!'))
+            .catch(() => alert('⚠️ Ошибка отправки. Пожалуйста, попробуйте позже.'));
             this.reset();
         });
         
         // Анимация при скролле
-        const observerOptions = {
-            threshold: 0.1
-        };
-        
         const observer = new IntersectionObserver((entries) => {
             entries.forEach(entry => {
                 if (entry.isIntersecting) {
                     entry.target.classList.add('animate-fadeIn');
                 }
             });
-        }, observerOptions);
+        }, { threshold: 0.1 });
         
-        document.querySelectorAll('section').forEach(section => {
-            observer.observe(section);
-        });
+        document.querySelectorAll('section, .module-card, .feature-card, .benefit-card').forEach(el => observer.observe(el));
     </script>
 </body>
 </html>
