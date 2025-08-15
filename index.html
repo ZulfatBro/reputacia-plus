@@ -2,7 +2,7 @@
 <html>
 <head>
 <meta charset="UTF-8">
-<title>P2P Звонки</title>
+<title>💬 P2P Звонки</title>
 <style>
     body {
         background: #0e0e1a;
@@ -13,9 +13,9 @@
     }
     h1 {
         color: #7a5cff;
-        margin-bottom: 10px;
+        margin-bottom: 20px;
     }
-    input, button {
+    input, button, textarea {
         padding: 10px;
         margin: 8px;
         border: none;
@@ -35,18 +35,18 @@
     button:hover {
         opacity: 0.85;
     }
-    #connect-area {
-        margin-top: 20px;
-    }
     textarea {
         width: 90%;
         height: 100px;
-        margin-top: 10px;
         background: #1a1a2e;
         color: #00e5ff;
-        border: none;
         border-radius: 5px;
         padding: 10px;
+        resize: none;
+    }
+    #connect-area {
+        margin-top: 20px;
+        display: none;
     }
 </style>
 </head>
@@ -60,23 +60,28 @@
     <button onclick="start()">Войти</button>
 </div>
 
-<div id="connect-area" style="display:none;">
+<div id="connect-area">
     <p>Твоё имя: <b id="showName"></b></p>
-    <input type="text" id="friendName" placeholder="Имя друга">
-    <button onclick="callFriend()">Позвонить</button>
-
-    <h3>Код приглашения</h3>
-    <textarea id="offer"></textarea>
-
-    <h3>Код ответа</h3>
-    <textarea id="answer"></textarea><br>
-    <button onclick="applyAnswer()">Подтвердить</button>
+    
+    <div>
+        <h3>Позвони другу</h3>
+        <input type="text" id="friendName" placeholder="Имя друга (для красоты)">
+        <button onclick="callFriend()">Позвонить</button>
+        <textarea id="offer" placeholder="Код приглашения"></textarea>
+    </div>
+    
+    <div>
+        <h3>Принять звонок</h3>
+        <textarea id="answer" placeholder="Вставь код приглашения друга"></textarea><br>
+        <button onclick="applyAnswer()">Подтвердить</button>
+    </div>
 </div>
 
 <script>
 let pc, localStream, remoteAudio;
 let myName = "";
 
+// Вход на сайт
 function start() {
     myName = document.getElementById("myName").value.trim();
     if (!myName) { alert("Введи имя"); return; }
@@ -88,21 +93,30 @@ function start() {
     initPeer();
 }
 
+// Инициализация PeerConnection
 function initPeer() {
     pc = new RTCPeerConnection({
         iceServers: [{ urls: 'stun:stun.l.google.com:19302' }]
     });
+
     remoteAudio = document.createElement("audio");
     remoteAudio.autoplay = true;
+    document.body.appendChild(remoteAudio);
 
     navigator.mediaDevices.getUserMedia({ audio: true }).then(stream => {
         localStream = stream;
         stream.getTracks().forEach(track => pc.addTrack(track, stream));
-    });
+    }).catch(err => alert("Ошибка доступа к микрофону: " + err));
 
     pc.ontrack = event => {
         remoteAudio.srcObject = event.streams[0];
     };
+}
+
+// Создание звонка (первый пользователь)
+async function callFriend() {
+    let offer = await pc.createOffer();
+    await pc.setLocalDescription(offer);
 
     pc.onicecandidate = event => {
         if (!event.candidate) {
@@ -111,34 +125,29 @@ function initPeer() {
     };
 }
 
-async function callFriend() {
-    let offer = await pc.createOffer();
-    await pc.setLocalDescription(offer);
-}
-
+// Принять звонок (второй пользователь)
 async function applyAnswer() {
-    let answerCode = document.getElementById("answer").value.trim();
-    if (!answerCode) return alert("Вставь код ответа");
+    let code = document.getElementById("answer").value.trim();
+    if (!code) return alert("Вставь код приглашения");
 
-    let answer = JSON.parse(atob(answerCode));
-    await pc.setRemoteDescription(new RTCSessionDescription(answer));
+    try {
+        let offer = JSON.parse(atob(code));
+        await pc.setRemoteDescription(new RTCSessionDescription(offer));
+
+        let answer = await pc.createAnswer();
+        await pc.setLocalDescription(answer);
+
+        // Ждём ICE
+        pc.onicecandidate = event => {
+            if (!event.candidate) {
+                document.getElementById("answer").value = btoa(JSON.stringify(pc.localDescription));
+            }
+        };
+    } catch (err) {
+        alert("Ошибка: " + err);
+        console.error(err);
+    }
 }
-
-// Для друга: он вставляет код приглашения и генерирует ответ
-document.getElementById("answer").addEventListener("paste", async function(e) {
-    setTimeout(async () => {
-        try {
-            let offerCode = document.getElementById("answer").value.trim();
-            let offer = JSON.parse(atob(offerCode));
-            await pc.setRemoteDescription(new RTCSessionDescription(offer));
-            let answer = await pc.createAnswer();
-            await pc.setLocalDescription(answer);
-        } catch (err) {
-            console.error(err);
-            alert("Ошибка при обработке кода");
-        }
-    }, 50);
-});
 </script>
 
 </body>
