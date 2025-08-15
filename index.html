@@ -2,7 +2,7 @@
 <html>
 <head>
 <meta charset="UTF-8">
-<title>P2P звонки без серверов</title>
+<title>P2P звонок без сервера</title>
 <style>
 body {
     background: #0f0f1a;
@@ -37,9 +37,6 @@ button:hover {
 <body>
 
 <h1>Прямой P2P звонок</h1>
-<p>Шаг 1: Один человек создаёт звонок → копирует код и отправляет другу.<br>
-Шаг 2: Друг вставляет код приглашения и создаёт ответ → отправляет обратно.<br>
-Шаг 3: Первый вставляет код ответа → соединение установлено.</p>
 
 <h3>Создать звонок (Offer)</h3>
 <button onclick="createOffer()">Создать Offer</button><br>
@@ -50,12 +47,14 @@ button:hover {
 <button onclick="createAnswer()">Создать Answer</button><br>
 <textarea id="answer" placeholder="Здесь появится код ответа"></textarea><br>
 
-<h3>Применить ответ</h3>
+<h3>Применить Answer</h3>
 <textarea id="remoteAnswer" placeholder="Вставьте сюда код ответа"></textarea><br>
 <button onclick="applyAnswer()">Применить Answer</button>
 
 <script>
-let pc = new RTCPeerConnection();
+let pc = new RTCPeerConnection({
+    iceServers: [{ urls: 'stun:stun.l.google.com:19302' }]
+});
 let localStream;
 let remoteAudio = document.createElement('audio');
 remoteAudio.autoplay = true;
@@ -72,31 +71,67 @@ pc.ontrack = event => {
     remoteAudio.srcObject = event.streams[0];
 };
 
+// Обработка ICE кандидатов
+let iceCandidates = [];
+pc.onicecandidate = event => {
+    if(event.candidate) {
+        iceCandidates.push(event.candidate);
+        document.getElementById("offer").value = btoa(JSON.stringify({
+            sdp: pc.localDescription,
+            ice: iceCandidates
+        }));
+    } else {
+        document.getElementById("offer").value = btoa(JSON.stringify({
+            sdp: pc.localDescription,
+            ice: iceCandidates
+        }));
+    }
+};
+
 // Создать Offer
 async function createOffer() {
     let offer = await pc.createOffer();
     await pc.setLocalDescription(offer);
-    document.getElementById("offer").value = btoa(JSON.stringify(offer));
+    iceCandidates = [];
+    document.getElementById("offer").value = btoa(JSON.stringify({
+        sdp: offer,
+        ice: iceCandidates
+    }));
 }
 
-// Создать Answer на основе вставленного Offer
+// Создать Answer
 async function createAnswer() {
     let offerCode = document.getElementById("remoteOffer").value;
     if(!offerCode) return alert("Вставьте код приглашения");
-    let offer = JSON.parse(atob(offerCode));
-    await pc.setRemoteDescription(new RTCSessionDescription(offer));
+    let data = JSON.parse(atob(offerCode));
+    await pc.setRemoteDescription(new RTCSessionDescription(data.sdp));
+    if(data.ice) {
+        for(let c of data.ice) {
+            await pc.addIceCandidate(new RTCIceCandidate(c));
+        }
+    }
     let answer = await pc.createAnswer();
     await pc.setLocalDescription(answer);
-    document.getElementById("answer").value = btoa(JSON.stringify(answer));
+    iceCandidates = [];
+    document.getElementById("answer").value = btoa(JSON.stringify({
+        sdp: answer,
+        ice: iceCandidates
+    }));
 }
 
-// Применить Answer для первого человека
+// Применить Answer
 async function applyAnswer() {
     let answerCode = document.getElementById("remoteAnswer").value;
     if(!answerCode) return alert("Вставьте код ответа");
-    let answer = JSON.parse(atob(answerCode));
-    await pc.setRemoteDescription(new RTCSessionDescription(answer));
+    let data = JSON.parse(atob(answerCode));
+    await pc.setRemoteDescription(new RTCSessionDescription(data.sdp));
+    if(data.ice) {
+        for(let c of data.ice) {
+            await pc.addIceCandidate(new RTCIceCandidate(c));
+        }
+    }
 }
 </script>
+
 </body>
 </html>
