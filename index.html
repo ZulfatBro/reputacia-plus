@@ -2,7 +2,7 @@
 <html>
 <head>
 <meta charset="UTF-8">
-<title>P2P звонок без сервера</title>
+<title>P2P Звонки через Интернет</title>
 <style>
 body {
     background: #0f0f1a;
@@ -36,20 +36,18 @@ button:hover {
 </head>
 <body>
 
-<h1>Прямой P2P звонок</h1>
+<h1>Прямой P2P звонок через интернет</h1>
+<p>Шаг 1: Один человек создаёт звонок → копирует код и отправляет другу.<br>
+Шаг 2: Друг вставляет код → создаёт ответ и отправляет обратно.<br>
+Шаг 3: Первый вставляет ответ → звонок соединён.</p>
 
-<h3>Создать звонок (Offer)</h3>
-<button onclick="createOffer()">Создать Offer</button><br>
-<textarea id="offer" placeholder="Здесь появится код приглашения"></textarea><br>
+<button onclick="createOffer()">Создать звонок</button><br>
+<textarea id="offer" placeholder="Здесь будет код приглашения"></textarea><br>
 
-<h3>Ответить на звонок (Answer)</h3>
-<textarea id="remoteOffer" placeholder="Вставьте сюда код приглашения"></textarea><br>
-<button onclick="createAnswer()">Создать Answer</button><br>
-<textarea id="answer" placeholder="Здесь появится код ответа"></textarea><br>
+<button onclick="createAnswer()">Ответить на звонок</button><br>
+<textarea id="answer" placeholder="Вставьте сюда код, который прислали"></textarea><br>
 
-<h3>Применить Answer</h3>
-<textarea id="remoteAnswer" placeholder="Вставьте сюда код ответа"></textarea><br>
-<button onclick="applyAnswer()">Применить Answer</button>
+<button onclick="applyAnswer()">Применить ответ</button>
 
 <script>
 let pc = new RTCPeerConnection({
@@ -64,71 +62,55 @@ document.body.appendChild(remoteAudio);
 navigator.mediaDevices.getUserMedia({ audio: true }).then(stream => {
     localStream = stream;
     stream.getTracks().forEach(track => pc.addTrack(track, stream));
-});
+}).catch(err => alert("Не удалось получить микрофон: " + err));
 
-// Воспроизведение удалённого аудио
+// Когда приходят треки от друга
 pc.ontrack = event => {
     remoteAudio.srcObject = event.streams[0];
 };
 
-// Обработка ICE кандидатов
-let iceCandidates = [];
+// Когда собираются ICE-кандидаты
 pc.onicecandidate = event => {
-    if(event.candidate) {
-        iceCandidates.push(event.candidate);
-        document.getElementById("offer").value = btoa(JSON.stringify({
-            sdp: pc.localDescription,
-            ice: iceCandidates
-        }));
-    } else {
-        document.getElementById("offer").value = btoa(JSON.stringify({
-            sdp: pc.localDescription,
-            ice: iceCandidates
-        }));
+    if (!event.candidate) { // только когда кандидаты собраны
+        if (pc.localDescription) {
+            document.getElementById("offer").value = btoa(JSON.stringify(pc.localDescription));
+        }
     }
 };
 
-// Создать Offer
+// Создать звонок
 async function createOffer() {
     let offer = await pc.createOffer();
     await pc.setLocalDescription(offer);
-    iceCandidates = [];
-    document.getElementById("offer").value = btoa(JSON.stringify({
-        sdp: offer,
-        ice: iceCandidates
-    }));
+    alert("Код приглашения готов. Отправьте его другу.");
 }
 
-// Создать Answer
+// Ответить на звонок
 async function createAnswer() {
-    let offerCode = document.getElementById("remoteOffer").value;
-    if(!offerCode) return alert("Вставьте код приглашения");
-    let data = JSON.parse(atob(offerCode));
-    await pc.setRemoteDescription(new RTCSessionDescription(data.sdp));
-    if(data.ice) {
-        for(let c of data.ice) {
-            await pc.addIceCandidate(new RTCIceCandidate(c));
-        }
+    try {
+        let offerCode = document.getElementById("answer").value.trim();
+        if (!offerCode) return alert("Вставьте код приглашения.");
+        let offer = JSON.parse(atob(offerCode));
+        await pc.setRemoteDescription(offer);
+        let answer = await pc.createAnswer();
+        await pc.setLocalDescription(answer);
+        document.getElementById("offer").value = btoa(JSON.stringify(answer));
+        alert("Ответ создан. Отправьте его обратно первому.");
+    } catch (err) {
+        alert("Ошибка при создании ответа: " + err);
     }
-    let answer = await pc.createAnswer();
-    await pc.setLocalDescription(answer);
-    iceCandidates = [];
-    document.getElementById("answer").value = btoa(JSON.stringify({
-        sdp: answer,
-        ice: iceCandidates
-    }));
 }
 
-// Применить Answer
+// Применить ответ
 async function applyAnswer() {
-    let answerCode = document.getElementById("remoteAnswer").value;
-    if(!answerCode) return alert("Вставьте код ответа");
-    let data = JSON.parse(atob(answerCode));
-    await pc.setRemoteDescription(new RTCSessionDescription(data.sdp));
-    if(data.ice) {
-        for(let c of data.ice) {
-            await pc.addIceCandidate(new RTCIceCandidate(c));
-        }
+    try {
+        let answerCode = document.getElementById("answer").value.trim();
+        if (!answerCode) return alert("Вставьте код ответа.");
+        let answer = JSON.parse(atob(answerCode));
+        await pc.setRemoteDescription(answer);
+        alert("Соединение установлено! Можете разговаривать.");
+    } catch (err) {
+        alert("Ошибка при применении ответа: " + err);
     }
 }
 </script>
