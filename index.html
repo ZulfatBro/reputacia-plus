@@ -1,615 +1,1147 @@
-```jsx
-import React, { useState, useEffect, useRef } from 'react';
-
-const App = () => {
-  const [user, setUser] = useState(null);
-  const [currentView, setCurrentView] = useState('login');
-  const [servers, setServers] = useState([
-    {
-      id: 1,
-      name: 'Геймеры',
-      icon: '🎮',
-      channels: [
-        { id: 1, name: 'общий', type: 'text' },
-        { id: 2, name: 'игры', type: 'text' },
-        { id: 3, name: 'музыка', type: 'text' },
-        { id: 4, name: 'голосовой', type: 'voice' }
-      ],
-      members: [
-        { id: 1, username: 'AlexGamer', avatar: 'https://placehold.co/40/3b82f6/ffffff?text=AG', status: 'online' },
-        { id: 2, username: 'MaxPro', avatar: 'https://placehold.co/40/ef4444/ffffff?text=MP', status: 'idle' }
-      ]
-    }
-  ]);
-  const [currentServer, setCurrentServer] = useState(null);
-  const [currentChannel, setCurrentChannel] = useState(null);
-  const [messages, setMessages] = useState({});
-  const [newMessage, setNewMessage] = useState('');
-  const [friends, setFriends] = useState([
-    { id: 1, username: 'AlexGamer', avatar: 'https://placehold.co/40/3b82f6/ffffff?text=AG', status: 'online', lastSeen: 'сейчас в сети' },
-    { id: 2, username: 'MaxPro', avatar: 'https://placehold.co/40/ef4444/ffffff?text=MP', status: 'idle', lastSeen: 'был 5 мин назад' }
-  ]);
-  const [friendRequests, setFriendRequests] = useState([
-    { id: 3, username: 'NewPlayer', avatar: 'https://placehold.co/40/10b981/ffffff?text=NP', status: 'online' }
-  ]);
-  const [newServerName, setNewServerName] = useState('');
-  const [showCreateServer, setShowCreateServer] = useState(false);
-  const [showAddFriend, setShowAddFriend] = useState(false);
-  const [friendUsername, setFriendUsername] = useState('');
-  const [onlineUsers, setOnlineUsers] = useState({});
-  const messagesEndRef = useRef(null);
-
-  // Initialize messages for all channels
-  useEffect(() => {
-    const initialMessages = {};
-    servers.forEach(server => {
-      server.channels.forEach(channel => {
-        if (channel.type === 'text') {
-          initialMessages[`${server.id}-${channel.id}`] = [
-            { id: 1, username: 'AlexGamer', content: 'Привет всем! Как дела?', timestamp: '14:30', avatar: 'https://placehold.co/40/3b82f6/ffffff?text=AG' },
-            { id: 2, username: 'MaxPro', content: 'Отлично! Только что выиграл в CS2!', timestamp: '14:32', avatar: 'https://placehold.co/40/ef4444/ffffff?text=MP' },
-            { id: 3, username: 'AlexGamer', content: 'Круто! Давай сыграем?', timestamp: '14:33', avatar: 'https://placehold.co/40/3b82f6/ffffff?text=AG' }
-          ];
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GameTalk - Геймерский P2P чат</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/peerjs@1.4.7/dist/peerjs.min.js"></script>
+    <style>
+        :root {
+            --dark-bg: #1e1f29;
+            --darker-bg: #171820;
+            --channel-bg: #2f3136;
+            --channel-hover: #34373c;
+            --text-primary: #ffffff;
+            --text-secondary: #b9bbbe;
+            --accent: #5865f2;
+            --accent-hover: #4752c4;
+            --online: #3ba55d;
+            --idle: #faa81a;
+            --dnd: #ed4245;
+            --message-bg: #36393f;
+            --input-bg: #40444b;
+            --success: #43b581;
+            --error: #f04747;
         }
-      });
-    });
-    setMessages(initialMessages);
-  }, [servers]);
 
-  // Set current server and channel
-  useEffect(() => {
-    if (servers.length > 0 && !currentServer) {
-      setCurrentServer(servers[0]);
-      setCurrentChannel(servers[0].channels[0]);
-    }
-  }, [servers, currentServer]);
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
 
-  // Auto-scroll to bottom
-  useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages, currentChannel, currentServer]);
+        body {
+            background-color: var(--dark-bg);
+            color: var(--text-primary);
+            height: 100vh;
+            display: flex;
+            overflow: hidden;
+        }
 
-  // Simulate online users
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setOnlineUsers(prev => {
-        const newUsers = { ...prev };
-        servers.forEach(server => {
-          server.members.forEach(member => {
-            newUsers[member.id] = Math.random() > 0.3; // 70% chance online
-          });
-        });
-        return newUsers;
-      });
-    }, 5000);
-    return () => clearInterval(interval);
-  }, [servers]);
+        .app-container {
+            display: flex;
+            width: 100%;
+            height: 100%;
+        }
 
-  const handleLogin = (e) => {
-    e.preventDefault();
-    const formData = new FormData(e.target);
-    const username = formData.get('username');
-    const password = formData.get('password');
-    
-    if (username && password) {
-      const mockUser = { 
-        id: Date.now(),
-        username, 
-        avatar: `https://placehold.co/40/8b5cf6/ffffff?text=${username[0].toUpperCase()}` 
-      };
-      setUser(mockUser);
-      setCurrentView('main');
-    }
-  };
+        /* Панель друзей */
+        .friends-panel {
+            width: 260px;
+            background-color: var(--darker-bg);
+            display: flex;
+            flex-direction: column;
+            border-right: 1px solid var(--channel-bg);
+        }
 
-  const handleRegister = (e) => {
-    e.preventDefault();
-    const formData = new FormData(e.target);
-    const username = formData.get('username');
-    const email = formData.get('email');
-    const password = formData.get('password');
-    
-    if (username && email && password) {
-      const mockUser = { 
-        id: Date.now(),
-        username, 
-        avatar: `https://placehold.co/40/8b5cf6/ffffff?text=${username[0].toUpperCase()}` 
-      };
-      setUser(mockUser);
-      setCurrentView('main');
-    }
-  };
+        .panel-header {
+            padding: 16px;
+            border-bottom: 1px solid var(--channel-bg);
+            font-weight: bold;
+            font-size: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
 
-  const handleSendMessage = (e) => {
-    e.preventDefault();
-    if (newMessage.trim() && user && currentServer && currentChannel) {
-      const channelId = `${currentServer.id}-${currentChannel.id}`;
-      const message = {
-        id: Date.now(),
-        username: user.username,
-        content: newMessage,
-        timestamp: new Date().toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' }),
-        avatar: user.avatar
-      };
-      
-      setMessages(prev => ({
-        ...prev,
-        [channelId]: [...(prev[channelId] || []), message]
-      }));
-      
-      setNewMessage('');
-    }
-  };
+        .panel-header i {
+            margin-right: 8px;
+        }
 
-  const handleCreateServer = () => {
-    if (newServerName.trim() && user) {
-      const newServer = {
-        id: Date.now(),
-        name: newServerName,
-        icon: '🔷',
-        channels: [
-          { id: Date.now() + 1, name: 'общий', type: 'text' },
-          { id: Date.now() + 2, name: 'голосовой', type: 'voice' }
-        ],
-        members: [user]
-      };
-      
-      setServers(prev => [...prev, newServer]);
-      setCurrentServer(newServer);
-      setCurrentChannel(newServer.channels[0]);
-      setShowCreateServer(false);
-      setNewServerName('');
-    }
-  };
+        .panel-title {
+            display: flex;
+            align-items: center;
+        }
 
-  const handleAddFriend = () => {
-    if (friendUsername.trim() && user && friendUsername !== user.username) {
-      const newFriend = {
-        id: Date.now(),
-        username: friendUsername,
-        avatar: `https://placehold.co/40/10b981/ffffff?text=${friendUsername[0].toUpperCase()}`,
-        status: 'online',
-        lastSeen: 'только что'
-      };
-      
-      setFriends(prev => [...prev, newFriend]);
-      setShowAddFriend(false);
-      setFriendUsername('');
-    }
-  };
+        .user-info {
+            display: flex;
+            align-items: center;
+            padding: 12px 16px;
+            border-bottom: 1px solid var(--channel-bg);
+        }
 
-  const joinServer = (server) => {
-    if (user) {
-      const updatedServer = {
-        ...server,
-        members: [...server.members, user]
-      };
-      
-      setServers(prev => prev.map(s => s.id === server.id ? updatedServer : s));
-      setCurrentServer(updatedServer);
-      setCurrentChannel(updatedServer.channels.find(c => c.type === 'text') || updatedServer.channels[0]);
-    }
-  };
+        .user-avatar {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            background: var(--accent);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 10px;
+            font-weight: bold;
+            position: relative;
+        }
 
-  const getStatusColor = (status) => {
-    switch (status) {
-      case 'online': return 'bg-green-500';
-      case 'idle': return 'bg-yellow-500';
-      case 'dnd': return 'bg-red-500';
-      default: return 'bg-gray-500';
-    }
-  };
+        .user-status {
+            position: absolute;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: var(--online);
+            border: 2px solid var(--darker-bg);
+            bottom: 0;
+            right: 0;
+        }
 
-  const getCurrentMessages = () => {
-    if (!currentServer || !currentChannel) return [];
-    const channelId = `${currentServer.id}-${currentChannel.id}`;
-    return messages[channelId] || [];
-  };
+        .username {
+            font-size: 14px;
+            font-weight: 600;
+        }
 
-  if (currentView === 'login') {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900 flex items-center justify-center p-4">
-        <div className="bg-gray-800 rounded-2xl shadow-2xl p-8 w-full max-w-md border border-gray-700">
-          <div className="text-center mb-8">
-            <div className="text-4xl mb-4">🎮</div>
-            <h1 className="text-3xl font-bold text-white mb-2">GameChat</h1>
-            <p className="text-gray-400">Геймерский чат для настоящих профи</p>
-          </div>
-          
-          <button
-            onClick={() => setCurrentView('register')}
-            className="w-full bg-purple-600 hover:bg-purple-700 text-white font-semibold py-3 px-4 rounded-lg mb-4 transition-colors"
-          >
-            Зарегистрироваться
-          </button>
-          
-          <div className="text-center text-gray-400 my-4">или</div>
-          
-          <form onSubmit={handleLogin} className="space-y-4">
-            <div>
-              <input
-                type="text"
-                name="username"
-                placeholder="Имя пользователя"
-                className="w-full bg-gray-700 text-white px-4 py-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
-                required
-              />
-            </div>
-            <div>
-              <input
-                type="password"
-                name="password"
-                placeholder="Пароль"
-                className="w-full bg-gray-700 text-white px-4 py-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
-                required
-              />
-            </div>
-            <button
-              type="submit"
-              className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-4 rounded-lg transition-colors"
-            >
-              Войти
-            </button>
-          </form>
-        </div>
-      </div>
-    );
-  }
+        .user-id {
+            font-size: 11px;
+            color: var(--text-secondary);
+            margin-top: 2px;
+        }
 
-  if (currentView === 'register') {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900 flex items-center justify-center p-4">
-        <div className="bg-gray-800 rounded-2xl shadow-2xl p-8 w-full max-w-md border border-gray-700">
-          <div className="text-center mb-8">
-            <div className="text-4xl mb-4">🎮</div>
-            <h1 className="text-3xl font-bold text-white mb-2">Регистрация</h1>
-            <p className="text-gray-400">Создайте аккаунт для начала игры</p>
-          </div>
-          
-          <form onSubmit={handleRegister} className="space-y-4">
-            <div>
-              <input
-                type="text"
-                name="username"
-                placeholder="Имя пользователя"
-                className="w-full bg-gray-700 text-white px-4 py-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
-                required
-              />
-            </div>
-            <div>
-              <input
-                type="email"
-                name="email"
-                placeholder="Email"
-                className="w-full bg-gray-700 text-white px-4 py-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
-                required
-              />
-            </div>
-            <div>
-              <input
-                type="password"
-                name="password"
-                placeholder="Пароль"
-                className="w-full bg-gray-700 text-white px-4 py-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
-                required
-              />
-            </div>
-            <div>
-              <input
-                type="password"
-                name="confirmPassword"
-                placeholder="Подтвердите пароль"
-                className="w-full bg-gray-700 text-white px-4 py-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
-                required
-              />
-            </div>
-            <button
-              type="submit"
-              className="w-full bg-purple-600 hover:bg-purple-700 text-white font-semibold py-3 px-4 rounded-lg transition-colors"
-            >
-              Зарегистрироваться
-            </button>
-          </form>
-          
-          <button
-            onClick={() => setCurrentView('login')}
-            className="w-full mt-4 text-gray-400 hover:text-white transition-colors"
-          >
-            Уже есть аккаунт? Войти
-          </button>
-        </div>
-      </div>
-    );
-  }
+        .friends-list {
+            flex: 1;
+            overflow-y: auto;
+            padding: 8px;
+        }
 
-  return (
-    <div className="min-h-screen bg-gray-900 text-white flex">
-      {/* Sidebar */}
-      <div className="w-16 bg-gray-800 flex flex-col items-center py-4 space-y-6">
-        <div className="w-10 h-10 bg-purple-600 rounded-lg flex items-center justify-center font-bold text-lg">
-          🎮
-        </div>
-        
-        {servers.map(server => (
-          <button
-            key={server.id}
-            onClick={() => joinServer(server)}
-            className={`w-10 h-10 rounded-lg flex items-center justify-center text-lg font-bold transition-colors ${
-              currentServer?.id === server.id ? 'bg-blue-600' : 'bg-gray-700 hover:bg-gray-600'
-            }`}
-            title={server.name}
-          >
-            {server.icon}
-          </button>
-        ))}
-        
-        <button
-          onClick={() => setShowCreateServer(true)}
-          className="w-10 h-10 bg-gray-700 hover:bg-gray-600 rounded-lg flex items-center justify-center text-lg transition-colors"
-          title="Создать сервер"
-        >
-          +
-        </button>
-      </div>
+        .friend {
+            display: flex;
+            align-items: center;
+            padding: 8px;
+            border-radius: 4px;
+            margin-bottom: 4px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
 
-      {/* Server Panel */}
-      <div className="w-64 bg-gray-800 flex flex-col">
-        <div className="p-4 border-b border-gray-700">
-          <h2 className="font-bold text-lg">{currentServer?.name || 'Выберите сервер'}</h2>
-        </div>
-        
-        <div className="flex-1 p-3">
-          {currentServer && (
-            <>
-              <div className="text-xs text-gray-400 uppercase font-semibold mb-3">Текстовые каналы</div>
-              {currentServer.channels.filter(channel => channel.type === 'text').map(channel => (
-                <button
-                  key={channel.id}
-                  onClick={() => setCurrentChannel(channel)}
-                  className={`w-full text-left px-3 py-2 rounded-md mb-1 transition-colors flex items-center text-sm ${
-                    currentChannel?.id === channel.id ? 'bg-blue-600 text-white' : 'text-gray-300 hover:bg-gray-700'
-                  }`}
-                >
-                  <span className="mr-2">#</span>
-                  {channel.name}
-                </button>
-              ))}
-              
-              <div className="text-xs text-gray-400 uppercase font-semibold mb-3 mt-6">Голосовые каналы</div>
-              {currentServer.channels.filter(channel => channel.type === 'voice').map(channel => (
-                <button
-                  key={channel.id}
-                  className="w-full text-left px-3 py-2 rounded-md mb-1 transition-colors flex items-center text-sm text-gray-300 hover:bg-gray-700"
-                >
-                  <svg className="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
-                    <path fillRule="evenodd" d="M7 4a3 3 0 016 0v4a3 3 0 11-6 0V4zm4 10.93A7.001 7.001 0 0017 8a1 1 0 10-2 0A5 5 0 015 8a1 1 0 00-2 0 7.001 7.001 0 006 6.93V17H6a1 1 0 100 2h8a1 1 0 100-2h-3v-2.07z" clipRule="evenodd" />
-                  </svg>
-                  {channel.name}
-                </button>
-              ))}
-            </>
-          )}
-        </div>
+        .friend:hover {
+            background: var(--channel-hover);
+        }
 
-        <div className="p-4 border-t border-gray-700">
-          <div className="flex items-center space-x-3">
-            <img src={user?.avatar} alt={user?.username} className="w-8 h-8 rounded-full" />
-            <div className="flex-1">
-              <div className="font-medium text-sm">{user?.username}</div>
-              <div className="text-xs text-gray-400">В сети</div>
-            </div>
-          </div>
-        </div>
-      </div>
+        .friend.active {
+            background: var(--channel-hover);
+        }
 
-      {/* Main Chat Area */}
-      <div className="flex-1 flex flex-col">
-        {/* Channel Header */}
-        <div className="bg-gray-800 px-6 py-4 border-b border-gray-700 flex items-center justify-between">
-          {currentServer && currentChannel ? (
-            <>
-              <div className="flex items-center space-x-3">
-                <span className="text-gray-400">#</span>
-                <h1 className="text-xl font-semibold">{currentChannel.name}</h1>
-              </div>
-              
-              <div className="flex items-center space-x-4">
-                <button className="text-gray-400 hover:text-white transition-colors">
-                  <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-                    <path d="M2 10a8 8 0 018-8v8h8a8 8 0 11-16 0z"></path>
-                    <path d="M12 2.252A8.014 8.014 0 0117.5 8.01 8.014 8.014 0 0112 2.252z"></path>
-                  </svg>
-                </button>
-                
-                <button
-                  onClick={() => setShowAddFriend(true)}
-                  className="bg-green-600 hover:bg-green-700 px-4 py-2 rounded-lg text-sm font-medium transition-colors"
-                >
-                  Добавить друга
-                </button>
-              </div>
-            </>
-          ) : (
-            <div className="text-gray-400">Выберите сервер и канал</div>
-          )}
-        </div>
+        .friend-avatar {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: var(--accent);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 10px;
+            font-weight: bold;
+            font-size: 14px;
+            position: relative;
+        }
 
-        {/* Messages */}
-        <div className="flex-1 bg-gray-900 overflow-y-auto p-6">
-          {currentServer && currentChannel ? (
-            getCurrentMessages().map(message => (
-              <div key={message.id} className="mb-4 flex">
-                <img src={message.avatar} alt={message.username} className="w-10 h-10 rounded-full mr-3 flex-shrink-0" />
-                <div className="flex-1">
-                  <div className="flex items-baseline space-x-2 mb-1">
-                    <span className="font-semibold text-sm">{message.username}</span>
-                    <span className="text-xs text-gray-500">{message.timestamp}</span>
-                  </div>
-                  <p className="text-gray-300">{message.content}</p>
+        .friend-info {
+            flex: 1;
+        }
+
+        .friend-name {
+            font-size: 14px;
+        }
+
+        .friend-status {
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+
+        .friend-online {
+            color: var(--online);
+        }
+
+        .friend-idle {
+            color: var(--idle);
+        }
+
+        .friend-dnd {
+            color: var(--dnd);
+        }
+
+        .friend-status-dot {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            margin-right: 4px;
+        }
+
+        .status-online {
+            background: var(--online);
+        }
+
+        .status-idle {
+            background: var(--idle);
+        }
+
+        .status-dnd {
+            background: var(--dnd);
+        }
+
+        .add-friend-container {
+            padding: 16px;
+            border-top: 1px solid var(--channel-bg);
+        }
+
+        .add-friend-input {
+            width: 100%;
+            padding: 10px;
+            background: var(--input-bg);
+            border: none;
+            border-radius: 4px;
+            color: var(--text-primary);
+            font-size: 14px;
+        }
+
+        .add-friend-input:focus {
+            outline: 2px solid var(--accent);
+        }
+
+        .add-friend-btn {
+            width: 100%;
+            padding: 10px;
+            margin-top: 8px;
+            background: var(--accent);
+            border: none;
+            border-radius: 4px;
+            color: white;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .add-friend-btn:hover {
+            background: var(--accent-hover);
+        }
+
+        /* Область чата */
+        .chat-area {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .chat-header {
+            padding: 16px;
+            border-bottom: 1px solid var(--channel-bg);
+            display: flex;
+            align-items: center;
+        }
+
+        .chat-header-info {
+            margin-left: 12px;
+        }
+
+        .chat-title {
+            font-size: 16px;
+            font-weight: 600;
+        }
+
+        .chat-status {
+            font-size: 13px;
+            color: var(--text-secondary);
+            margin-top: 2px;
+        }
+
+        .messages-container {
+            flex: 1;
+            padding: 16px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            background: url('https://www.transparenttextures.com/patterns/carbon-fibre.png') var(--dark-bg);
+        }
+
+        .message {
+            display: flex;
+            margin-bottom: 16px;
+            max-width: 80%;
+        }
+
+        .avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: var(--accent);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 16px;
+            flex-shrink: 0;
+            font-weight: bold;
+            font-size: 18px;
+            position: relative;
+        }
+
+        .status {
+            position: absolute;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: var(--online);
+            border: 2px solid var(--darker-bg);
+            bottom: 0;
+            right: 0;
+        }
+
+        .status.idle {
+            background: var(--idle);
+        }
+
+        .status.dnd {
+            background: var(--dnd);
+        }
+
+        .message-content {
+            background: var(--message-bg);
+            border-radius: 8px;
+            padding: 8px 16px;
+        }
+
+        .message-header {
+            display: flex;
+            align-items: baseline;
+            margin-bottom: 4px;
+        }
+
+        .username {
+            font-weight: 600;
+            margin-right: 8px;
+        }
+
+        .timestamp {
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+
+        .message-text {
+            line-height: 1.4;
+        }
+
+        .own-message {
+            align-self: flex-end;
+        }
+
+        .own-message .message-content {
+            background: var(--accent);
+        }
+
+        .own-message .message {
+            flex-direction: row-reverse;
+        }
+
+        .own-message .avatar {
+            margin-right: 0;
+            margin-left: 16px;
+        }
+
+        .system-message {
+            align-self: center;
+            background: rgba(114, 137, 218, 0.1);
+            padding: 6px 12px;
+            border-radius: 4px;
+            font-size: 13px;
+            color: var(--text-secondary);
+            margin: 8px 0;
+        }
+
+        .connection-status {
+            padding: 8px 16px;
+            background: rgba(0, 0, 0, 0.3);
+            font-size: 13px;
+            display: flex;
+            align-items: center;
+        }
+
+        .status-indicator {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            margin-right: 8px;
+        }
+
+        .connected {
+            background: var(--online);
+        }
+
+        .connecting {
+            background: var(--idle);
+        }
+
+        .disconnected {
+            background: var(--dnd);
+        }
+
+        /* Панель ввода сообщения */
+        .input-container {
+            padding: 16px;
+            background: var(--channel-bg);
+        }
+
+        .message-input {
+            width: 100%;
+            background: var(--input-bg);
+            border: none;
+            border-radius: 8px;
+            padding: 12px 16px;
+            color: var(--text-primary);
+            font-size: 16px;
+            resize: none;
+            height: 44px;
+            max-height: 200px;
+        }
+
+        .message-input:focus {
+            outline: none;
+        }
+
+        /* Панель регистрации/входа */
+        .auth-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.9);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 100;
+        }
+
+        .auth-box {
+            background: var(--darker-bg);
+            border-radius: 8px;
+            width: 480px;
+            padding: 32px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            position: relative;
+        }
+
+        .auth-header {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .auth-header h2 {
+            margin-bottom: 8px;
+            font-size: 26px;
+            background: linear-gradient(90deg, #5865f2, #eb459e);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .auth-header p {
+            color: var(--text-secondary);
+        }
+
+        .auth-tabs {
+            display: flex;
+            margin-bottom: 20px;
+            background: var(--channel-bg);
+            border-radius: 4px;
+        }
+
+        .auth-tab {
+            flex: 1;
+            text-align: center;
+            padding: 12px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .auth-tab.active {
+            background: var(--accent);
+        }
+
+        .input-group {
+            margin-bottom: 20px;
+        }
+
+        .input-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-size: 12px;
+            text-transform: uppercase;
+            font-weight: 600;
+            color: var(--text-secondary);
+        }
+
+        .input-group input {
+            width: 100%;
+            padding: 12px;
+            background: var(--input-bg);
+            border: none;
+            border-radius: 4px;
+            color: var(--text-primary);
+            font-size: 16px;
+        }
+
+        .input-group input:focus {
+            outline: 2px solid var(--accent);
+        }
+
+        .auth-button {
+            width: 100%;
+            padding: 12px;
+            background: var(--accent);
+            border: none;
+            border-radius: 4px;
+            color: white;
+            font-weight: 600;
+            font-size: 16px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .auth-button:hover {
+            background: var(--accent-hover);
+        }
+
+        .close-auth {
+            position: absolute;
+            top: 16px;
+            right: 16px;
+            color: var(--text-secondary);
+            cursor: pointer;
+            font-size: 24px;
+        }
+
+        /* Уведомления */
+        .notification {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            padding: 12px 16px;
+            border-radius: 4px;
+            background: var(--darker-bg);
+            color: white;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+            display: flex;
+            align-items: center;
+            z-index: 1000;
+            transform: translateX(120%);
+            transition: transform 0.3s ease;
+        }
+
+        .notification.show {
+            transform: translateX(0);
+        }
+
+        .notification i {
+            margin-right: 8px;
+            font-size: 18px;
+        }
+
+        .notification.success {
+            border-left: 4px solid var(--success);
+        }
+
+        .notification.error {
+            border-left: 4px solid var(--error);
+        }
+
+        /* Адаптивность */
+        @media (max-width: 768px) {
+            .friends-panel {
+                width: 60px;
+            }
+            
+            .friends-panel .user-info .username,
+            .friends-panel .friend-info,
+            .friends-panel .add-friend-container {
+                display: none;
+            }
+            
+            .friends-panel .panel-header span {
+                display: none;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <!-- Панель друзей -->
+        <div class="friends-panel">
+            <div class="panel-header">
+                <div class="panel-title">
+                    <i class="fas fa-gamepad"></i>
+                    <span>GameTalk</span>
                 </div>
-              </div>
-            ))
-          ) : (
-            <div className="text-center text-gray-500 mt-20">
-              <div className="text-6xl mb-4">🎮</div>
-              <h2 className="text-2xl font-bold mb-2">Добро пожаловать в GameChat!</h2>
-              <p>Выберите сервер и канал, чтобы начать общение</p>
+                <i class="fas fa-cog"></i>
             </div>
-          )}
-          <div ref={messagesEndRef} />
-        </div>
-
-        {/* Message Input */}
-        <div className="bg-gray-800 p-4">
-          {currentServer && currentChannel ? (
-            <form onSubmit={handleSendMessage} className="flex space-x-3">
-              <input
-                type="text"
-                value={newMessage}
-                onChange={(e) => setNewMessage(e.target.value)}
-                placeholder={`Сообщение #${currentChannel.name}`}
-                className="flex-1 bg-gray-700 text-white px-4 py-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                disabled={!currentServer || !currentChannel}
-              />
-              <button
-                type="submit"
-                className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                disabled={!currentServer || !currentChannel || !newMessage.trim()}
-              >
-                Отправить
-              </button>
-            </form>
-          ) : (
-            <div className="text-center text-gray-500 py-2">
-              Выберите канал для отправки сообщений
+            
+            <div class="user-info">
+                <div class="user-avatar">
+                    <span id="userInitials">U</span>
+                    <div class="user-status online"></div>
+                </div>
+                <div>
+                    <div class="username" id="usernameDisplay">Username</div>
+                    <div class="user-id" id="userIdDisplay">ID: loading...</div>
+                </div>
             </div>
-          )}
-        </div>
-      </div>
-
-      {/* Friends Panel */}
-      <div className="w-80 bg-gray-800 flex flex-col">
-        <div className="p-4 border-b border-gray-700">
-          <h3 className="font-bold text-lg">Друзья</h3>
+            
+            <div class="friends-list" id="friendsList">
+                <!-- Список друзей будет здесь -->
+            </div>
+            
+            <div class="add-friend-container">
+                <input type="text" class="add-friend-input" id="friendIdInput" placeholder="Введите ID друга">
+                <button class="add-friend-btn" id="addFriendBtn">Добавить друга</button>
+            </div>
         </div>
         
-        {friendRequests.length > 0 && (
-          <div className="p-4 border-b border-gray-700">
-            <div className="text-sm font-semibold text-gray-400 mb-2">Запросы в друзья</div>
-            {friendRequests.map(friend => (
-              <div key={friend.id} className="flex items-center space-x-3 p-2 rounded hover:bg-gray-700">
-                <img src={friend.avatar} alt={friend.username} className="w-8 h-8 rounded-full" />
-                <div className="flex-1">
-                  <div className="text-sm font-medium">{friend.username}</div>
+        <!-- Область чата -->
+        <div class="chat-area">
+            <div class="chat-header">
+                <div class="avatar small">
+                    <span>F</span>
+                    <div class="status online"></div>
                 </div>
-                <div className="flex space-x-1">
-                  <button className="w-6 h-6 bg-green-600 hover:bg-green-700 rounded flex items-center justify-center text-xs">
-                    ✓
-                  </button>
-                  <button className="w-6 h-6 bg-gray-600 hover:bg-gray-700 rounded flex items-center justify-center text-xs">
-                    ✗
-                  </button>
+                <div class="chat-header-info">
+                    <div class="chat-title" id="currentChatTitle">Выберите друга для общения</div>
+                    <div class="chat-status" id="currentChatStatus">Начните общение!</div>
                 </div>
-              </div>
-            ))}
-          </div>
-        )}
-        
-        <div className="flex-1 p-4">
-          <div className="text-sm font-semibold text-gray-400 mb-3">В сети ({friends.filter(f => f.status === 'online').length})</div>
-          {friends.filter(f => f.status === 'online').map(friend => (
-            <div key={friend.id} className="flex items-center space-x-3 p-2 rounded hover:bg-gray-700 cursor-pointer">
-              <div className="relative">
-                <img src={friend.avatar} alt={friend.username} className="w-8 h-8 rounded-full" />
-                <div className={`absolute -bottom-1 -right-1 w-3 h-3 rounded-full border-2 border-gray-800 ${getStatusColor(friend.status)}`}></div>
-              </div>
-              <div>
-                <div className="text-sm font-medium">{friend.username}</div>
-                <div className="text-xs text-gray-400">{friend.lastSeen}</div>
-              </div>
             </div>
-          ))}
-          
-          <div className="text-sm font-semibold text-gray-400 mb-3 mt-6">Не в сети ({friends.filter(f => f.status !== 'online').length})</div>
-          {friends.filter(f => f.status !== 'online').map(friend => (
-            <div key={friend.id} className="flex items-center space-x-3 p-2 rounded hover:bg-gray-700 cursor-pointer">
-              <div className="relative">
-                <img src={friend.avatar} alt={friend.username} className="w-8 h-8 rounded-full" />
-                <div className={`absolute -bottom-1 -right-1 w-3 h-3 rounded-full border-2 border-gray-800 ${getStatusColor(friend.status)}`}></div>
-              </div>
-              <div>
-                <div className="text-sm font-medium">{friend.username}</div>
-                <div className="text-xs text-gray-400">{friend.lastSeen}</div>
-              </div>
+            
+            <div class="connection-status">
+                <div class="status-indicator connected" id="connectionStatus"></div>
+                <span id="connectionStatusText">Соединение установлено</span>
             </div>
-          ))}
+            
+            <div class="messages-container" id="messagesContainer">
+                <!-- Сообщения будут здесь -->
+            </div>
+            
+            <div class="input-container">
+                <textarea class="message-input" id="messageInput" placeholder="Напишите сообщение..." disabled></textarea>
+            </div>
         </div>
-      </div>
-
-      {/* Create Server Modal */}
-      {showCreateServer && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-gray-800 rounded-2xl p-8 w-96 border border-gray-700">
-            <h2 className="text-2xl font-bold mb-6">Создать сервер</h2>
-            <input
-              type="text"
-              value={newServerName}
-              onChange={(e) => setNewServerName(e.target.value)}
-              placeholder="Название сервера"
-              className="w-full bg-gray-700 text-white px-4 py-3 rounded-lg mb-4 focus:outline-none focus:ring-2 focus:ring-purple-500"
-              onKeyPress={(e) => e.key === 'Enter' && handleCreateServer()}
-            />
-            <div className="flex space-x-4">
-              <button
-                onClick={() => setShowCreateServer(false)}
-                className="flex-1 bg-gray-700 hover:bg-gray-600 text-white py-3 rounded-lg transition-colors"
-              >
-                Отмена
-              </button>
-              <button
-                onClick={handleCreateServer}
-                className="flex-1 bg-purple-600 hover:bg-purple-700 text-white py-3 rounded-lg transition-colors"
-              >
-                Создать
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Add Friend Modal */}
-      {showAddFriend && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-gray-800 rounded-2xl p-8 w-96 border border-gray-700">
-            <h2 className="text-2xl font-bold mb-6">Добавить друга</h2>
-            <input
-              type="text"
-              value={friendUsername}
-              onChange={(e) => setFriendUsername(e.target.value)}
-              placeholder="Имя пользователя"
-              className="w-full bg-gray-700 text-white px-4 py-3 rounded-lg mb-4 focus:outline-none focus:ring-2 focus:ring-purple-500"
-              onKeyPress={(e) => e.key === 'Enter' && handleAddFriend()}
-            />
-            <div className="flex space-x-4">
-              <button
-                onClick={() => setShowAddFriend(false)}
-                className="flex-1 bg-gray-700 hover:bg-gray-600 text-white py-3 rounded-lg transition-colors"
-              >
-                Отмена
-              </button>
-              <button
-                onClick={handleAddFriend}
-                className="flex-1 bg-green-600 hover:bg-green-700 text-white py-3 rounded-lg transition-colors"
-              >
-                Добавить
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
-  );
-};
+    
+    <!-- Окно регистрации/входа -->
+    <div class="auth-container" id="authContainer">
+        <div class="auth-box">
+            <div class="close-auth" id="closeAuth">
+                <i class="fas fa-times"></i>
+            </div>
+            <div class="auth-header">
+                <h2>GameTalk</h2>
+                <p>Геймерский P2P чат для настоящих фанатов</p>
+            </div>
+            
+            <div class="auth-tabs">
+                <div class="auth-tab active" id="loginTab">Вход</div>
+                <div class="auth-tab" id="registerTab">Регистрация</div>
+            </div>
+            
+            <div class="input-group">
+                <label for="username">Имя пользователя</label>
+                <input type="text" id="username" placeholder="Введите ваш никнейм">
+            </div>
+            
+            <button class="auth-button" id="authButton">Продолжить</button>
+        </div>
+    </div>
+    
+    <!-- Уведомления -->
+    <div class="notification" id="notification">
+        <i class="fas fa-info-circle"></i>
+        <span id="notificationText">Сообщение</span>
+    </div>
 
-export default App;
-```
+    <script>
+        // Основные переменные
+        let peer;
+        let currentUser = {
+            id: null,
+            username: null,
+            status: 'online'
+        };
+        
+        let connections = {};
+        let friends = {};
+        let currentChat = null;
+        
+        // Элементы DOM
+        const authContainer = document.getElementById('authContainer');
+        const closeAuth = document.getElementById('closeAuth');
+        const loginTab = document.getElementById('loginTab');
+        const registerTab = document.getElementById('registerTab');
+        const authButton = document.getElementById('authButton');
+        const usernameInput = document.getElementById('username');
+        const messageInput = document.getElementById('messageInput');
+        const messagesContainer = document.getElementById('messagesContainer');
+        const friendsList = document.getElementById('friendsList');
+        const friendIdInput = document.getElementById('friendIdInput');
+        const addFriendBtn = document.getElementById('addFriendBtn');
+        const userInitials = document.getElementById('userInitials');
+        const usernameDisplay = document.getElementById('usernameDisplay');
+        const userIdDisplay = document.getElementById('userIdDisplay');
+        const currentChatTitle = document.getElementById('currentChatTitle');
+        const currentChatStatus = document.getElementById('currentChatStatus');
+        const connectionStatus = document.getElementById('connectionStatus');
+        const connectionStatusText = document.getElementById('connectionStatusText');
+        const notification = document.getElementById('notification');
+        const notificationText = document.getElementById('notificationText');
+        
+        // Инициализация приложения
+        function initApp() {
+            // Проверяем, есть ли сохраненный пользователь
+            const savedUser = localStorage.getItem('gametalk_user');
+            if (savedUser) {
+                try {
+                    const userData = JSON.parse(savedUser);
+                    currentUser = userData;
+                    initPeer();
+                    updateUserUI();
+                    authContainer.style.display = 'none';
+                    loadFriends();
+                } catch (e) {
+                    showAuth();
+                }
+            } else {
+                showAuth();
+            }
+        }
+        
+        // Показать окно авторизации
+        function showAuth() {
+            authContainer.style.display = 'flex';
+        }
+        
+        // Инициализация Peer.js
+        function initPeer() {
+            // Генерируем уникальный ID для пользователя
+            if (!currentUser.id) {
+                currentUser.id = 'user_' + Math.random().toString(36).substr(2, 9);
+                saveUserData();
+            }
+            
+            // Инициализируем Peer
+            peer = new Peer(currentUser.id, {
+                host: '0.peerjs.com',
+                port: 443,
+                path: '/',
+                secure: true
+            });
+            
+            peer.on('open', function(id) {
+                console.log('My peer ID is: ' + id);
+                currentUser.id = id;
+                saveUserData();
+                updateUserUI();
+                updateConnectionStatus('connected', 'Соединение установлено');
+            });
+            
+            peer.on('connection', function(conn) {
+                console.log('Новое входящее соединение от: ' + conn.peer);
+                
+                // Обработка входящего соединения
+                setupConnection(conn);
+                
+                // Добавляем друга, если он еще не в списке
+                if (!friends[conn.peer]) {
+                    friends[conn.peer] = {
+                        id: conn.peer,
+                        username: 'Друг #' + conn.peer.substr(0, 4),
+                        status: 'online'
+                    };
+                    saveFriends();
+                    renderFriendsList();
+                }
+                
+                showNotification(`Новое подключение от ${friends[conn.peer].username}`, 'success');
+            });
+            
+            peer.on('error', function(err) {
+                console.error('Peer error:', err);
+                if (err.type === 'unavailable-id') {
+                    // Если ID занят, генерируем новый
+                    currentUser.id = null;
+                    saveUserData();
+                    initPeer();
+                } else if (err.type === 'disconnected') {
+                    updateConnectionStatus('disconnected', 'Соединение потеряно');
+                } else if (err.type === 'network') {
+                    updateConnectionStatus('connecting', 'Переподключение...');
+                }
+            });
+            
+            peer.on('disconnected', function() {
+                updateConnectionStatus('disconnected', 'Соединение потеряно');
+                // Пытаемся переподключиться
+                setTimeout(() => {
+                    peer.reconnect();
+                }, 2000);
+            });
+        }
+        
+        // Настройка соединения
+        function setupConnection(conn) {
+            // Добавляем соединение в наш список
+            connections[conn.peer] = conn;
+            
+            // Обработка входящих данных
+            conn.on('data', function(data) {
+                console.log('Получены данные от ' + conn.peer + ': ', data);
+                
+                if (data.type === 'message') {
+                    displayMessage(data.sender, data.text, false);
+                } else if (data.type === 'user-info') {
+                    // Обновляем информацию о друге
+                    friends[conn.peer] = {
+                        id: conn.peer,
+                        username: data.username,
+                        status: data.status
+                    };
+                    saveFriends();
+                    renderFriendsList();
+                    
+                    // Если это текущий чат, обновляем заголовок
+                    if (currentChat === conn.peer) {
+                        updateChatUI();
+                    }
+                }
+            });
+            
+            conn.on('close', function() {
+                console.log('Соединение закрыто с ' + conn.peer);
+                if (friends[conn.peer]) {
+                    friends[conn.peer].status = 'offline';
+                    saveFriends();
+                    renderFriendsList();
+                    
+                    if (currentChat === conn.peer) {
+                        currentChatStatus.textContent = 'Друг не в сети';
+                    }
+                }
+            });
+            
+            conn.on('error', function(err) {
+                console.error('Connection error:', err);
+            });
+            
+            // Отправляем информацию о себе
+            conn.send({
+                type: 'user-info',
+                username: currentUser.username,
+                status: currentUser.status
+            });
+        }
+        
+        // Сохранение данных пользователя
+        function saveUserData() {
+            localStorage.setItem('gametalk_user', JSON.stringify(currentUser));
+            updateUserUI();
+        }
+        
+        // Сохранение списка друзей
+        function saveFriends() {
+            localStorage.setItem('gametalk_friends', JSON.stringify(friends));
+        }
+        
+        // Загрузка списка друзей
+        function loadFriends() {
+            const savedFriends = localStorage.getItem('gametalk_friends');
+            if (savedFriends) {
+                try {
+                    friends = JSON.parse(savedFriends);
+                    renderFriendsList();
+                } catch (e) {
+                    friends = {};
+                }
+            }
+        }
+        
+        // Обновление UI пользователя
+        function updateUserUI() {
+            userInitials.textContent = currentUser.username ? currentUser.username.charAt(0).toUpperCase() : 'U';
+            usernameDisplay.textContent = currentUser.username || 'Username';
+            userIdDisplay.textContent = 'ID: ' + (currentUser.id || 'loading...');
+        }
+        
+        // Обновление UI чата
+        function updateChatUI() {
+            if (currentChat && friends[currentChat]) {
+                currentChatTitle.textContent = friends[currentChat].username;
+                
+                if (connections[currentChat] && connections[currentChat].open) {
+                    currentChatStatus.textContent = 'В сети';
+                } else {
+                    currentChatStatus.textContent = 'Не в сети';
+                }
+                
+                messageInput.disabled = false;
+                messageInput.placeholder = `Напишите сообщение ${friends[currentChat].username}...`;
+            } else {
+                currentChatTitle.textContent = 'Выберите друга для общения';
+                currentChatStatus.textContent = 'Начните общение!';
+                messageInput.disabled = true;
+                messageInput.placeholder = 'Напишите сообщение...';
+            }
+        }
+        
+        // Обновление статуса соединения
+        function updateConnectionStatus(status, text) {
+            connectionStatus.className = 'status-indicator';
+            if (status === 'connected') {
+                connectionStatus.classList.add('connected');
+            } else if (status === 'connecting') {
+                connectionStatus.classList.add('connecting');
+            } else {
+                connectionStatus.classList.add('disconnected');
+            }
+            connectionStatusText.textContent = text;
+        }
+        
+        // Отображение списка друзей
+        function renderFriendsList() {
+            friendsList.innerHTML = '';
+            
+            Object.values(friends).forEach(friend => {
+                const friendEl = document.createElement('div');
+                friendEl.className = 'friend';
+                if (currentChat === friend.id) {
+                    friendEl.classList.add('active');
+                }
+                
+                friendEl.innerHTML = `
+                    <div class="friend-avatar">
+                        <span>${friend.username.charAt(0).toUpperCase()}</span>
+                        <div class="status ${friend.status}"></div>
+                    </div>
+                    <div class="friend-info">
+                        <div class="friend-name">${friend.username}</div>
+                        <div class="friend-status">
+                            <span class="friend-status-dot status-${friend.status}"></span>
+                            ${friend.status === 'online' ? 'В сети' : 
+                              friend.status === 'idle' ? 'Отошёл' : 
+                              friend.status === 'dnd' ? 'Не беспокоить' : 'Не в сети'}
+                        </div>
+                    </div>
+                `;
+                
+                friendEl.addEventListener('click', () => {
+                    openChat(friend.id);
+                });
+                
+                friendsList.appendChild(friendEl);
+            });
+        }
+        
+        // Открытие чата с другом
+        function openChat(friendId) {
+            currentChat = friendId;
+            
+            // Если соединения нет, попытаться подключиться
+            if (!connections[friendId] || !connections[friendId].open) {
+                connectToFriend(friendId);
+            }
+            
+            updateChatUI();
+            renderFriendsList();
+            
+            // Прокрутить сообщения вниз
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        }
+        
+        // Подключение к другу
+        function connectToFriend(friendId) {
+            // Проверяем, есть ли уже соединение
+            if (connections[friendId] && connections[friendId].open) {
+                return;
+            }
+            
+            // Создаем новое соединение
+            const conn = peer.connect(friendId);
+            
+            conn.on('open', function() {
+                console.log('Успешное подключение к ' + friendId);
+                setupConnection(conn);
+                
+                if (friends[friendId]) {
+                    friends[friendId].status = 'online';
+                    saveFriends();
+                    renderFriendsList();
+                    
+                    if (currentChat === friendId) {
+                        currentChatStatus.textContent = 'В сети';
+                    }
+                }
+            });
+            
+            conn.on('error', function(err) {
+                console.error('Ошибка подключения к ' + friendId, err);
+                showNotification('Не удалось подключиться к другу', 'error');
+            });
+        }
+        
+        // Отправка сообщения
+        function sendMessage() {
+            const text = messageInput.value.trim();
+            if (text && currentChat && connections[currentChat]) {
+                // Создаем объект сообщения
+                const message = {
+                    type: 'message',
+                    text: text,
+                    sender: currentUser.id,
+                    timestamp: new Date().toISOString()
+                };
+                
+                // Отправляем через соединение
+                connections[currentChat].send(message);
+                
+                // Отображаем в UI
+                displayMessage(currentUser.id, text, true);
+                
+                // Очищаем поле ввода
+                messageInput.value = '';
+                messageInput.style.height = '44px';
+            }
+        }
+        
+        // Отображение сообщения
+        function displayMessage(senderId, text, isOwn) {
+            const friend = friends[senderId];
+            const senderName = isOwn ? 'Вы' : (friend ? friend.username : 'Неизвестный');
+            
+            const messageEl = document.createElement('div');
+            messageEl.className = `message ${isOwn ? 'own-message' : ''}`;
+            
+            messageEl.innerHTML = `
+                <div class="avatar">
+                    <span>${senderName.charAt(0).toUpperCase()}</span>
+                    <div class="status online"></div>
+                </div>
+                <div class="message-content">
+                    <div class="message-header">
+                        <div class="username">${senderName}</div>
+                        <div class="timestamp">${new Date().toLocaleTimeString()}</div>
+                    </div>
+                    <div class="message-text">${text}</div>
+                </div>
+            `;
+            
+            messagesContainer.appendChild(messageEl);
+            
+            // Прокручиваем к новому сообщению
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        }
+        
+        // Показать уведомление
+        function showNotification(text, type) {
+            notification.className = `notification ${type}`;
+            notificationText.textContent = text;
+            notification.classList.add('show');
+            
+            setTimeout(() => {
+                notification.classList.remove('show');
+            }, 3000);
+        }
+        
+        // Обработчики событий
+        document.addEventListener('DOMContentLoaded', initApp);
+        
+        // Обработка аутентификации
+        loginTab.addEventListener('click', () => {
+            loginTab.classList.add('active');
+            registerTab.classList.remove('active');
+        });
+        
+        registerTab.addEventListener('click', () => {
+            registerTab.classList.add('active');
+            loginTab.classList.remove('active');
+        });
+        
+        closeAuth.addEventListener('click', () => {
+            authContainer.style.display = 'none';
+        });
+        
+        authButton.addEventListener('click', () => {
+            const username = usernameInput.value.trim();
+            if (username.length < 3) {
+                showNotification('Имя пользователя должно быть не менее 3 символов', 'error');
+                return;
+            }
+            
+            currentUser.username = username;
+            saveUserData();
+            updateUserUI();
+            initPeer();
+            authContainer.style.display = 'none';
+        });
+        
+        // Добавление друга
+        addFriendBtn.addEventListener('click', () => {
+            const friendId = friendIdInput.value.trim();
+            if (!friendId) {
+                showNotification('Введите ID друга', 'error');
+                return;
+            }
+            
+            if (friendId === currentUser.id) {
+                showNotification('Нельзя добавить самого себя', 'error');
+                return;
+            }
+            
+            if (friends[friendId]) {
+                showNotification('Этот друг уже добавлен', 'error');
+                return;
+            }
+            
+            // Добавляем в список друзей
+            friends[friendId] = {
+                id: friendId,
+                username: 'Друг #' + friendId.substr(0, 4),
+                status: 'offline'
+            };
+            
+            saveFriends();
+            renderFriendsList();
+            friendIdInput.value = '';
+            
+            // Пытаемся подключиться
+            connectToFriend(friendId);
+            
+            showNotification('Друг добавлен', 'success');
+        });
+        
+        // Отправка сообщения
+        messageInput.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                sendMessage();
+            }
+        });
+        
+        // Автоматическое изменение высоты поля ввода
+        messageInput.addEventListener('input', function() {
+            this.style.height = 'auto';
+            this.style.height = (this.scrollHeight) + 'px';
+        });
+    </script>
+</body>
+</html>
