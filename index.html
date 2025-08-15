@@ -2,107 +2,101 @@
 <html>
 <head>
 <meta charset="UTF-8">
-<title>💬 P2P Звонки</title>
+<title>P2P звонки без серверов</title>
 <style>
-    body {
-        background: #0e0e1a;
-        color: white;
-        font-family: Arial, sans-serif;
-        text-align: center;
-        padding: 30px;
-    }
-    h1 {
-        color: #7a5cff;
-        margin-bottom: 20px;
-    }
-    button, input {
-        padding: 10px;
-        margin: 8px;
-        border: none;
-        border-radius: 5px;
-        font-size: 16px;
-    }
-    button {
-        background: linear-gradient(90deg, #6a00f4, #00c3ff);
-        color: white;
-        cursor: pointer;
-    }
-    button:hover {
-        opacity: 0.85;
-    }
-    input {
-        width: 90%;
-        max-width: 400px;
-        background: #1a1a2e;
-        color: #00e5ff;
-    }
-    #connect-area {
-        margin-top: 20px;
-    }
+body {
+    background: #0f0f1a;
+    color: white;
+    font-family: sans-serif;
+    text-align: center;
+    padding: 20px;
+}
+textarea {
+    width: 90%;
+    height: 120px;
+    background: #1a1a2e;
+    color: #00e5ff;
+    border: none;
+    padding: 10px;
+    margin-top: 10px;
+    resize: none;
+}
+button {
+    background: #6200ea;
+    color: white;
+    padding: 10px 20px;
+    border: none;
+    margin-top: 10px;
+    cursor: pointer;
+}
+button:hover {
+    background: #3700b3;
+}
 </style>
 </head>
 <body>
 
-<h1>💬 P2P Звонки</h1>
-<p>Просто создай звонок и дай другу код</p>
+<h1>Прямой P2P звонок</h1>
+<p>Шаг 1: Один человек создаёт звонок → копирует код и отправляет другу.<br>
+Шаг 2: Друг вставляет код приглашения и создаёт ответ → отправляет обратно.<br>
+Шаг 3: Первый вставляет код ответа → соединение установлено.</p>
 
-<div id="connect-area">
-    <button onclick="createCall()">Создать звонок</button><br>
-    <input id="callCode" placeholder="Код звонка"><br>
-    <button onclick="joinCall()">Присоединиться к звонку</button>
-</div>
+<h3>Создать звонок (Offer)</h3>
+<button onclick="createOffer()">Создать Offer</button><br>
+<textarea id="offer" placeholder="Здесь появится код приглашения"></textarea><br>
+
+<h3>Ответить на звонок (Answer)</h3>
+<textarea id="remoteOffer" placeholder="Вставьте сюда код приглашения"></textarea><br>
+<button onclick="createAnswer()">Создать Answer</button><br>
+<textarea id="answer" placeholder="Здесь появится код ответа"></textarea><br>
+
+<h3>Применить ответ</h3>
+<textarea id="remoteAnswer" placeholder="Вставьте сюда код ответа"></textarea><br>
+<button onclick="applyAnswer()">Применить Answer</button>
 
 <script>
-let pc, localStream, remoteAudio;
+let pc = new RTCPeerConnection();
+let localStream;
+let remoteAudio = document.createElement('audio');
+remoteAudio.autoplay = true;
+document.body.appendChild(remoteAudio);
 
-// Инициализация PeerConnection
-async function initPeer() {
-    pc = new RTCPeerConnection({ iceServers: [{ urls: 'stun:stun.l.google.com:19302' }] });
-    remoteAudio = document.createElement("audio");
-    remoteAudio.autoplay = true;
-    document.body.appendChild(remoteAudio);
+// Получаем микрофон
+navigator.mediaDevices.getUserMedia({ audio: true }).then(stream => {
+    localStream = stream;
+    stream.getTracks().forEach(track => pc.addTrack(track, stream));
+});
 
-    localStream = await navigator.mediaDevices.getUserMedia({ audio: true });
-    localStream.getTracks().forEach(track => pc.addTrack(track, localStream));
+// Воспроизведение удалённого аудио
+pc.ontrack = event => {
+    remoteAudio.srcObject = event.streams[0];
+};
 
-    pc.ontrack = event => {
-        remoteAudio.srcObject = event.streams[0];
-    };
-}
-
-// Создать звонок
-async function createCall() {
-    if (!pc) await initPeer();
+// Создать Offer
+async function createOffer() {
     let offer = await pc.createOffer();
     await pc.setLocalDescription(offer);
-
-    pc.onicecandidate = event => {
-        if (!event.candidate) {
-            document.getElementById("callCode").value = btoa(JSON.stringify(pc.localDescription));
-        }
-    };
+    document.getElementById("offer").value = btoa(JSON.stringify(offer));
 }
 
-// Присоединиться к звонку
-async function joinCall() {
-    if (!pc) await initPeer();
-    let code = document.getElementById("callCode").value.trim();
-    if (!code) return alert("Вставь код звонка");
-
-    let offer = JSON.parse(atob(code));
+// Создать Answer на основе вставленного Offer
+async function createAnswer() {
+    let offerCode = document.getElementById("remoteOffer").value;
+    if(!offerCode) return alert("Вставьте код приглашения");
+    let offer = JSON.parse(atob(offerCode));
     await pc.setRemoteDescription(new RTCSessionDescription(offer));
-
     let answer = await pc.createAnswer();
     await pc.setLocalDescription(answer);
+    document.getElementById("answer").value = btoa(JSON.stringify(answer));
+}
 
-    // Показать код ответа (можно отправить обратно создателю)
-    pc.onicecandidate = event => {
-        if (!event.candidate) {
-            document.getElementById("callCode").value = btoa(JSON.stringify(pc.localDescription));
-        }
-    };
+// Применить Answer для первого человека
+async function applyAnswer() {
+    let answerCode = document.getElementById("remoteAnswer").value;
+    if(!answerCode) return alert("Вставьте код ответа");
+    let answer = JSON.parse(atob(answerCode));
+    await pc.setRemoteDescription(new RTCSessionDescription(answer));
 }
 </script>
-
 </body>
 </html>
