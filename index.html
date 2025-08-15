@@ -15,17 +15,12 @@
         color: #7a5cff;
         margin-bottom: 20px;
     }
-    input, button, textarea {
+    button, textarea {
         padding: 10px;
         margin: 8px;
         border: none;
         border-radius: 5px;
         font-size: 16px;
-    }
-    input {
-        width: 250px;
-        background: #1a1a2e;
-        color: #00e5ff;
     }
     button {
         background: linear-gradient(90deg, #6a00f4, #00c3ff);
@@ -46,52 +41,40 @@
     }
     #connect-area {
         margin-top: 20px;
-        display: none;
+    }
+    .block {
+        background: #1a1a2e;
+        padding: 15px;
+        margin: 15px auto;
+        border-radius: 10px;
+        width: 95%;
+        max-width: 500px;
     }
 </style>
 </head>
 <body>
 
 <h1>💬 P2P Звонки</h1>
-<p>Введи имя и подключись к другу без серверов</p>
-
-<div id="login">
-    <input type="text" id="myName" placeholder="Твоё имя">
-    <button onclick="start()">Войти</button>
-</div>
+<p>Просто скопируй и вставь код звонка</p>
 
 <div id="connect-area">
-    <p>Твоё имя: <b id="showName"></b></p>
-    
-    <div>
+    <div class="block">
         <h3>Позвони другу</h3>
-        <input type="text" id="friendName" placeholder="Имя друга (для красоты)">
-        <button onclick="callFriend()">Позвонить</button>
-        <textarea id="offer" placeholder="Код приглашения"></textarea>
+        <button onclick="callFriend()">Создать код звонка</button>
+        <textarea id="offer" placeholder="Код звонка"></textarea><br>
+        <button onclick="copyOffer()">Скопировать код</button>
     </div>
     
-    <div>
+    <div class="block">
         <h3>Принять звонок</h3>
-        <textarea id="answer" placeholder="Вставь код приглашения друга"></textarea><br>
+        <textarea id="answer" placeholder="Вставь код звонка друга"></textarea><br>
         <button onclick="applyAnswer()">Подтвердить</button>
+        <button onclick="copyAnswer()">Скопировать свой ответ</button>
     </div>
 </div>
 
 <script>
 let pc, localStream, remoteAudio;
-let myName = "";
-
-// Вход на сайт
-function start() {
-    myName = document.getElementById("myName").value.trim();
-    if (!myName) { alert("Введи имя"); return; }
-
-    document.getElementById("login").style.display = "none";
-    document.getElementById("connect-area").style.display = "block";
-    document.getElementById("showName").textContent = myName;
-
-    initPeer();
-}
 
 // Инициализация PeerConnection
 function initPeer() {
@@ -113,8 +96,9 @@ function initPeer() {
     };
 }
 
-// Создание звонка (первый пользователь)
+// Создать звонок
 async function callFriend() {
+    if (!pc) initPeer();
     let offer = await pc.createOffer();
     await pc.setLocalDescription(offer);
 
@@ -125,10 +109,11 @@ async function callFriend() {
     };
 }
 
-// Принять звонок (второй пользователь)
+// Принять звонок
 async function applyAnswer() {
+    if (!pc) initPeer();
     let code = document.getElementById("answer").value.trim();
-    if (!code) return alert("Вставь код приглашения");
+    if (!code) return alert("Вставь код звонка");
 
     try {
         let offer = JSON.parse(atob(code));
@@ -137,7 +122,6 @@ async function applyAnswer() {
         let answer = await pc.createAnswer();
         await pc.setLocalDescription(answer);
 
-        // Ждём ICE
         pc.onicecandidate = event => {
             if (!event.candidate) {
                 document.getElementById("answer").value = btoa(JSON.stringify(pc.localDescription));
@@ -147,6 +131,22 @@ async function applyAnswer() {
         alert("Ошибка: " + err);
         console.error(err);
     }
+}
+
+// Копировать код приглашения
+function copyOffer() {
+    let offer = document.getElementById("offer");
+    offer.select();
+    document.execCommand("copy");
+    alert("Код скопирован!");
+}
+
+// Копировать ответ
+function copyAnswer() {
+    let answer = document.getElementById("answer");
+    answer.select();
+    document.execCommand("copy");
+    alert("Ответ скопирован!");
 }
 </script>
 
