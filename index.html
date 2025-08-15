@@ -1,200 +1,95 @@
 <!DOCTYPE html>
-<html lang="ru">
+<html>
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>NexusChat с реальными звонками</title>
-    <style>
-        :root {
-            --bg-dark: #121218;
-            --bg-darker: #0a0a0f;
-            --bg-light: #1e1e2a;
-            --accent-blue: #00a8ff;
-            --accent-purple: #9c27b0;
-            --text-primary: #e0e0e0;
-            --text-secondary: #a0a0a0;
-        }
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-        }
-        body {
-            background-color: var(--bg-dark);
-            color: var(--text-primary);
-            height: 100vh;
-            display: grid;
-            grid-template-columns: 80px 240px 1fr;
-            grid-template-rows: 48px 1fr 60px;
-            grid-template-areas:
-                "server-list nav-bar nav-bar"
-                "server-list channel-list main-content"
-                "server-list channel-list input-area";
-        }
-        /* ... (остальные стили из предыдущего кода) ... */
-        
-        /* Стили для звонка */
-        .call-container {
-            display: none;
-            position: fixed;
-            bottom: 20px;
-            right: 20px;
-            width: 300px;
-            background: var(--bg-light);
-            border-radius: 8px;
-            box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
-            z-index: 1000;
-        }
-        .call-video {
-            width: 100%;
-            border-radius: 8px 8px 0 0;
-            background: black;
-        }
-        .call-controls {
-            display: flex;
-            justify-content: center;
-            padding: 10px;
-            gap: 15px;
-        }
-        .call-btn {
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
-            border: none;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 18px;
-        }
-        .call-accept {
-            background: var(--accent-blue);
-            color: white;
-        }
-        .call-decline {
-            background: var(--danger);
-            color: white;
-        }
-    </style>
+<meta charset="UTF-8">
+<title>P2P звонки без серверов</title>
+<style>
+body {
+    background: #0f0f1a;
+    color: white;
+    font-family: sans-serif;
+    text-align: center;
+    padding: 20px;
+}
+textarea {
+    width: 90%;
+    height: 120px;
+    background: #1a1a2e;
+    color: #00e5ff;
+    border: none;
+    padding: 10px;
+    margin-top: 10px;
+    resize: none;
+}
+button {
+    background: #6200ea;
+    color: white;
+    padding: 10px 20px;
+    border: none;
+    margin-top: 10px;
+    cursor: pointer;
+}
+button:hover {
+    background: #3700b3;
+}
+</style>
 </head>
 <body>
-    <!-- Весь предыдущий HTML интерфейс -->
-    <div class="server-list">...</div>
-    <div class="nav-bar">...</div>
-    <div class="friends-list">...</div>
-    <div class="channel-list">...</div>
-    <div class="main-content">...</div>
-    <div class="input-area">...</div>
 
-    <!-- Контейнер для звонка -->
-    <div class="call-container" id="call-container">
-        <video class="call-video" id="remote-video" autoplay></video>
-        <video class="call-video" id="local-video" autoplay muted></video>
-        <div class="call-controls">
-            <button class="call-btn call-accept" id="accept-call">✓</button>
-            <button class="call-btn call-decline" id="decline-call">✕</button>
-        </div>
-    </div>
+<h1>Прямой звонок без сервера</h1>
+<p>Шаг 1: Один человек создаёт звонок → копирует код и отправляет другу.<br>
+Шаг 2: Друг вставляет код и подключается.</p>
 
-    <script>
-        // Весь предыдущий JS код...
-        
-        // ===== WebRTC для звонков =====
-        const callContainer = document.getElementById('call-container');
-        const localVideo = document.getElementById('local-video');
-        const remoteVideo = document.getElementById('remote-video');
-        const acceptCallBtn = document.getElementById('accept-call');
-        const declineCallBtn = document.getElementById('decline-call');
-        
-        let peerConnection;
-        let localStream;
-        let currentCall = null;
+<button onclick="createOffer()">Создать звонок</button><br>
+<textarea id="offer" placeholder="Здесь будет код приглашения"></textarea><br>
 
-        // Имитация сигнального сервера (в реальном приложении нужен WebSocket)
-        const signalingServer = {
-            sendOffer: (offer) => {
-                setTimeout(() => {
-                    if (confirm('Иван Петров звонит вам. Принять вызов?')) {
-                        signalingServer.receiveOffer(offer);
-                    }
-                }, 2000);
-            },
-            receiveOffer: async (offer) => {
-                await initCall(false);
-                peerConnection.setRemoteDescription(offer);
-                const answer = await peerConnection.createAnswer();
-                await peerConnection.setLocalDescription(answer);
-                signalingServer.sendAnswer(answer);
-            },
-            sendAnswer: (answer) => {
-                peerConnection.setRemoteDescription(answer);
-            }
-        };
+<button onclick="createAnswer()">Ответить на звонок</button><br>
+<textarea id="answer" placeholder="Вставьте сюда код, который вам прислали"></textarea><br>
 
-        // Инициализация звонка
-        async function initCall(isCaller) {
-            callContainer.style.display = 'block';
-            
-            // Получаем доступ к камере и микрофону
-            localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
-            localVideo.srcObject = localStream;
-            
-            // Настройка WebRTC
-            const configuration = { iceServers: [{ urls: 'stun:stun.l.google.com:19302' }] };
-            peerConnection = new RTCPeerConnection(configuration);
-            
-            // Добавляем локальный поток
-            localStream.getTracks().forEach(track => {
-                peerConnection.addTrack(track, localStream);
-            });
-            
-            // Получаем удаленный поток
-            peerConnection.ontrack = (event) => {
-                remoteVideo.srcObject = event.streams[0];
-            };
-            
-            // Генерация ICE кандидатов
-            peerConnection.onicecandidate = (event) => {
-                if (event.candidate) {
-                    // В реальном приложении отправляем кандидата другому пользователю
-                }
-            };
-            
-            if (isCaller) {
-                const offer = await peerConnection.createOffer();
-                await peerConnection.setLocalDescription(offer);
-                signalingServer.sendOffer(offer);
-            }
-        }
+<button onclick="applyAnswer()">Подтвердить ответ</button>
 
-        // Обработчики кнопок
-        acceptCallBtn.addEventListener('click', async () => {
-            await initCall(false);
-        });
+<script>
+let pc = new RTCPeerConnection();
+let localStream;
+let remoteAudio = document.createElement('audio');
+remoteAudio.autoplay = true;
 
-        declineCallBtn.addEventListener('click', () => {
-            endCall();
-        });
+navigator.mediaDevices.getUserMedia({ audio: true }).then(stream => {
+    localStream = stream;
+    stream.getTracks().forEach(track => pc.addTrack(track, stream));
+});
 
-        function endCall() {
-            if (peerConnection) {
-                peerConnection.close();
-            }
-            if (localStream) {
-                localStream.getTracks().forEach(track => track.stop());
-            }
-            callContainer.style.display = 'none';
-            localVideo.srcObject = null;
-            remoteVideo.srcObject = null;
-        }
+pc.ontrack = event => {
+    remoteAudio.srcObject = event.streams[0];
+};
 
-        // Имитация входящего вызова (для демо)
-        setTimeout(() => {
-            if (Math.random() > 0.5) {
-                initCall(true);
-            }
-        }, 10000);
-    </script>
+pc.onicecandidate = event => {
+    if (event.candidate) return;
+    if (pc.localDescription.type === "offer") {
+        document.getElementById("offer").value = btoa(JSON.stringify(pc.localDescription));
+    } else if (pc.localDescription.type === "answer") {
+        document.getElementById("offer").value = btoa(JSON.stringify(pc.localDescription));
+    }
+};
+
+async function createOffer() {
+    let offer = await pc.createOffer();
+    await pc.setLocalDescription(offer);
+}
+
+async function createAnswer() {
+    let offerCode = document.getElementById("answer").value;
+    let offer = JSON.parse(atob(offerCode));
+    await pc.setRemoteDescription(new RTCSessionDescription(offer));
+    let answer = await pc.createAnswer();
+    await pc.setLocalDescription(answer);
+}
+
+async function applyAnswer() {
+    let answerCode = document.getElementById("answer").value;
+    let answer = JSON.parse(atob(answerCode));
+    await pc.setRemoteDescription(new RTCSessionDescription(answer));
+}
+</script>
 </body>
 </html>
