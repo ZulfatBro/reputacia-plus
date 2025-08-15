@@ -15,7 +15,7 @@
         color: #7a5cff;
         margin-bottom: 20px;
     }
-    button, textarea {
+    button, input {
         padding: 10px;
         margin: 8px;
         border: none;
@@ -30,66 +30,40 @@
     button:hover {
         opacity: 0.85;
     }
-    textarea {
+    input {
         width: 90%;
-        height: 100px;
+        max-width: 400px;
         background: #1a1a2e;
         color: #00e5ff;
-        border-radius: 5px;
-        padding: 10px;
-        resize: none;
     }
     #connect-area {
         margin-top: 20px;
-    }
-    .block {
-        background: #1a1a2e;
-        padding: 15px;
-        margin: 15px auto;
-        border-radius: 10px;
-        width: 95%;
-        max-width: 500px;
     }
 </style>
 </head>
 <body>
 
 <h1>💬 P2P Звонки</h1>
-<p>Просто скопируй и вставь код звонка</p>
+<p>Просто создай звонок и дай другу код</p>
 
 <div id="connect-area">
-    <div class="block">
-        <h3>Позвони другу</h3>
-        <button onclick="callFriend()">Создать код звонка</button>
-        <textarea id="offer" placeholder="Код звонка"></textarea><br>
-        <button onclick="copyOffer()">Скопировать код</button>
-    </div>
-    
-    <div class="block">
-        <h3>Принять звонок</h3>
-        <textarea id="answer" placeholder="Вставь код звонка друга"></textarea><br>
-        <button onclick="applyAnswer()">Подтвердить</button>
-        <button onclick="copyAnswer()">Скопировать свой ответ</button>
-    </div>
+    <button onclick="createCall()">Создать звонок</button><br>
+    <input id="callCode" placeholder="Код звонка"><br>
+    <button onclick="joinCall()">Присоединиться к звонку</button>
 </div>
 
 <script>
 let pc, localStream, remoteAudio;
 
 // Инициализация PeerConnection
-function initPeer() {
-    pc = new RTCPeerConnection({
-        iceServers: [{ urls: 'stun:stun.l.google.com:19302' }]
-    });
-
+async function initPeer() {
+    pc = new RTCPeerConnection({ iceServers: [{ urls: 'stun:stun.l.google.com:19302' }] });
     remoteAudio = document.createElement("audio");
     remoteAudio.autoplay = true;
     document.body.appendChild(remoteAudio);
 
-    navigator.mediaDevices.getUserMedia({ audio: true }).then(stream => {
-        localStream = stream;
-        stream.getTracks().forEach(track => pc.addTrack(track, stream));
-    }).catch(err => alert("Ошибка доступа к микрофону: " + err));
+    localStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    localStream.getTracks().forEach(track => pc.addTrack(track, localStream));
 
     pc.ontrack = event => {
         remoteAudio.srcObject = event.streams[0];
@@ -97,56 +71,36 @@ function initPeer() {
 }
 
 // Создать звонок
-async function callFriend() {
-    if (!pc) initPeer();
+async function createCall() {
+    if (!pc) await initPeer();
     let offer = await pc.createOffer();
     await pc.setLocalDescription(offer);
 
     pc.onicecandidate = event => {
         if (!event.candidate) {
-            document.getElementById("offer").value = btoa(JSON.stringify(pc.localDescription));
+            document.getElementById("callCode").value = btoa(JSON.stringify(pc.localDescription));
         }
     };
 }
 
-// Принять звонок
-async function applyAnswer() {
-    if (!pc) initPeer();
-    let code = document.getElementById("answer").value.trim();
+// Присоединиться к звонку
+async function joinCall() {
+    if (!pc) await initPeer();
+    let code = document.getElementById("callCode").value.trim();
     if (!code) return alert("Вставь код звонка");
 
-    try {
-        let offer = JSON.parse(atob(code));
-        await pc.setRemoteDescription(new RTCSessionDescription(offer));
+    let offer = JSON.parse(atob(code));
+    await pc.setRemoteDescription(new RTCSessionDescription(offer));
 
-        let answer = await pc.createAnswer();
-        await pc.setLocalDescription(answer);
+    let answer = await pc.createAnswer();
+    await pc.setLocalDescription(answer);
 
-        pc.onicecandidate = event => {
-            if (!event.candidate) {
-                document.getElementById("answer").value = btoa(JSON.stringify(pc.localDescription));
-            }
-        };
-    } catch (err) {
-        alert("Ошибка: " + err);
-        console.error(err);
-    }
-}
-
-// Копировать код приглашения
-function copyOffer() {
-    let offer = document.getElementById("offer");
-    offer.select();
-    document.execCommand("copy");
-    alert("Код скопирован!");
-}
-
-// Копировать ответ
-function copyAnswer() {
-    let answer = document.getElementById("answer");
-    answer.select();
-    document.execCommand("copy");
-    alert("Ответ скопирован!");
+    // Показать код ответа (можно отправить обратно создателю)
+    pc.onicecandidate = event => {
+        if (!event.candidate) {
+            document.getElementById("callCode").value = btoa(JSON.stringify(pc.localDescription));
+        }
+    };
 }
 </script>
 
