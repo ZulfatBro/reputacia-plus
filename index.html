@@ -1,498 +1,615 @@
-<!DOCTYPE html>
-<html lang="ru">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Репутация+ | Комплексное управление репутацией бизнеса</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <style>
-        @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700&display=swap');
-        body { font-family: 'Montserrat', sans-serif; }
-        .gradient-bg { background: linear-gradient(135deg, #6e48aa 0%, #9d50bb 100%); }
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
+```jsx
+import React, { useState, useEffect, useRef } from 'react';
+
+const App = () => {
+  const [user, setUser] = useState(null);
+  const [currentView, setCurrentView] = useState('login');
+  const [servers, setServers] = useState([
+    {
+      id: 1,
+      name: 'Геймеры',
+      icon: '🎮',
+      channels: [
+        { id: 1, name: 'общий', type: 'text' },
+        { id: 2, name: 'игры', type: 'text' },
+        { id: 3, name: 'музыка', type: 'text' },
+        { id: 4, name: 'голосовой', type: 'voice' }
+      ],
+      members: [
+        { id: 1, username: 'AlexGamer', avatar: 'https://placehold.co/40/3b82f6/ffffff?text=AG', status: 'online' },
+        { id: 2, username: 'MaxPro', avatar: 'https://placehold.co/40/ef4444/ffffff?text=MP', status: 'idle' }
+      ]
+    }
+  ]);
+  const [currentServer, setCurrentServer] = useState(null);
+  const [currentChannel, setCurrentChannel] = useState(null);
+  const [messages, setMessages] = useState({});
+  const [newMessage, setNewMessage] = useState('');
+  const [friends, setFriends] = useState([
+    { id: 1, username: 'AlexGamer', avatar: 'https://placehold.co/40/3b82f6/ffffff?text=AG', status: 'online', lastSeen: 'сейчас в сети' },
+    { id: 2, username: 'MaxPro', avatar: 'https://placehold.co/40/ef4444/ffffff?text=MP', status: 'idle', lastSeen: 'был 5 мин назад' }
+  ]);
+  const [friendRequests, setFriendRequests] = useState([
+    { id: 3, username: 'NewPlayer', avatar: 'https://placehold.co/40/10b981/ffffff?text=NP', status: 'online' }
+  ]);
+  const [newServerName, setNewServerName] = useState('');
+  const [showCreateServer, setShowCreateServer] = useState(false);
+  const [showAddFriend, setShowAddFriend] = useState(false);
+  const [friendUsername, setFriendUsername] = useState('');
+  const [onlineUsers, setOnlineUsers] = useState({});
+  const messagesEndRef = useRef(null);
+
+  // Initialize messages for all channels
+  useEffect(() => {
+    const initialMessages = {};
+    servers.forEach(server => {
+      server.channels.forEach(channel => {
+        if (channel.type === 'text') {
+          initialMessages[`${server.id}-${channel.id}`] = [
+            { id: 1, username: 'AlexGamer', content: 'Привет всем! Как дела?', timestamp: '14:30', avatar: 'https://placehold.co/40/3b82f6/ffffff?text=AG' },
+            { id: 2, username: 'MaxPro', content: 'Отлично! Только что выиграл в CS2!', timestamp: '14:32', avatar: 'https://placehold.co/40/ef4444/ffffff?text=MP' },
+            { id: 3, username: 'AlexGamer', content: 'Круто! Давай сыграем?', timestamp: '14:33', avatar: 'https://placehold.co/40/3b82f6/ffffff?text=AG' }
+          ];
         }
-        .animate-fadeIn { animation: fadeIn 0.6s ease-out forwards; }
-        .social-icon { transition: transform 0.3s; }
-        .social-icon:hover { transform: scale(1.1); }
-        .feature-card { transition: all 0.3s; }
-        .feature-card:hover { transform: translateY(-5px); box-shadow: 0 10px 20px rgba(0,0,0,0.1); }
-        .benefit-item { transition: all 0.3s; }
-        .benefit-item:hover { transform: scale(1.02); background-color: #f3e8ff; }
-    </style>
-</head>
-<body class="bg-gray-50">
-    <!-- Шапка -->
-    <header class="gradient-bg text-white">
-        <div class="container mx-auto px-4 py-6">
-            <div class="flex justify-between items-center">
-                <div class="flex items-center">
-                    <div class="bg-white text-purple-800 font-bold rounded-full w-12 h-12 flex items-center justify-center mr-3">
-                        <span class="text-xl">R+</span>
-                    </div>
-                    <h1 class="text-2xl font-bold">Репутация+</h1>
-                </div>
-                <div class="flex space-x-4">
-                    <a href="#" class="text-white hover:text-purple-200 social-icon"><i class="fab fa-telegram"></i></a>
-                    <a href="#" class="text-white hover:text-purple-200 social-icon"><i class="fab fa-whatsapp"></i></a>
-                </div>
-            </div>
-            
-            <div class="mt-12 mb-16 text-center">
-                <h2 class="text-3xl md:text-4xl font-bold mb-4 animate-fadeIn">🔒 Защити свой бизнес не отвлекаясь</h2>
-                <p class="text-lg mb-6 max-w-2xl mx-auto animate-fadeIn" style="animation-delay:0.2s">«Репутация+» — это цифровой щит вашего бизнеса. Мы следим за репутацией и помогаем вам расти, даже когда вы спите.</p>
-                <a href="#contact" class="bg-white text-purple-800 font-bold py-2 px-6 rounded-full hover:bg-purple-100 transition inline-block animate-fadeIn" style="animation-delay:0.4s">
-                    ✅ Начать защиту
-                </a>
-            </div>
-        </div>
-    </header>
+      });
+    });
+    setMessages(initialMessages);
+  }, [servers]);
 
-    <!-- Ключевые преимущества -->
-    <section class="py-12 bg-white">
-        <div class="container mx-auto px-4">
-            <h2 class="text-2xl font-bold text-center mb-8">✅ Преимущества работы с нами</h2>
-            
-            <div class="grid md:grid-cols-3 gap-6 max-w-5xl mx-auto">
-                <div class="bg-purple-50 p-6 rounded-lg feature-card">
-                    <div class="text-3xl mb-3">⚡</div>
-                    <h3 class="text-lg font-bold mb-2">Быстрая реакция</h3>
-                    <p class="text-gray-600">Оперативно находим негативные отзывы и минимизируем их влияние на репутацию вашего бизнеса.</p>
-                </div>
-                
-                <div class="bg-purple-50 p-6 rounded-lg feature-card">
-                    <div class="text-3xl mb-3">📊</div>
-                    <h3 class="text-lg font-bold mb-2">Регулярные отчёты</h3>
-                    <p class="text-gray-600">Предоставляем регулярные отчёты о состоянии вашей репутации на ключевых площадках.</p>
-                </div>
-                
-                <div class="bg-purple-50 p-6 rounded-lg feature-card">
-                    <div class="text-3xl mb-3">📈</div>
-                    <h3 class="text-lg font-bold mb-2">Комплексный подход</h3>
-                    <p class="text-gray-600">Помимо работы с отзывами, подключаем PR и SMM-менеджеров для анализа и улучшения ваших соцсетей и сайтов.</p>
-                </div>
-            </div>
-        </div>
-    </section>
+  // Set current server and channel
+  useEffect(() => {
+    if (servers.length > 0 && !currentServer) {
+      setCurrentServer(servers[0]);
+      setCurrentChannel(servers[0].channels[0]);
+    }
+  }, [servers, currentServer]);
 
-    <!-- Надежное решение -->
-    <section class="py-12 bg-gray-50">
-        <div class="container mx-auto px-4">
-            <h2 class="text-2xl font-bold text-center mb-8">🛡️ Надёжное решение по управлению репутацией</h2>
-            
-            <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-6xl mx-auto">
-                <div class="bg-white p-6 rounded-lg shadow-sm benefit-item">
-                    <div class="flex items-start">
-                        <div class="text-2xl mr-4">⚡</div>
-                        <div>
-                            <h3 class="font-bold mb-2">Быстро</h3>
-                            <p class="text-gray-600">Мы оперативно находим негативные отзывы о вашем бизнесе на ключевых площадках.</p>
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="bg-white p-6 rounded-lg shadow-sm benefit-item">
-                    <div class="flex items-start">
-                        <div class="text-2xl mr-4">🧠</div>
-                        <div>
-                            <h3 class="font-bold mb-2">Нейро-технологично</h3>
-                            <p class="text-gray-600">Анализируем ситуацию и помогаем снизить влияние негатива. Корреляция с помощью нейросетей.</p>
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="bg-white p-6 rounded-lg shadow-sm benefit-item">
-                    <div class="flex items-start">
-                        <div class="text-2xl mr-4">🎯</div>
-                        <div>
-                            <h3 class="font-bold mb-2">Эффективно</h3>
-                            <p class="text-gray-600">Формируем положительный фон вокруг вашей компании, создавая позитивный онлайн-образ.</p>
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="bg-white p-6 rounded-lg shadow-sm benefit-item">
-                    <div class="flex items-start">
-                        <div class="text-2xl mr-4">📊</div>
-                        <div>
-                            <h3 class="font-bold mb-2">Отчётность</h3>
-                            <p class="text-gray-600">Предоставляем регулярные отчёты о состоянии вашей репутации.</p>
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="bg-white p-6 rounded-lg shadow-sm benefit-item">
-                    <div class="flex items-start">
-                        <div class="text-2xl mr-4">💰</div>
-                        <div>
-                            <h3 class="font-bold mb-2">Бесплатно</h3>
-                            <p class="text-gray-600">Подключаем PR и SMM-менеджеров для анализа и улучшения ваших соцсетей и сайта.</p>
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="bg-white p-6 rounded-lg shadow-sm benefit-item">
-                    <div class="flex items-start">
-                        <div class="text-2xl mr-4">🤝</div>
-                        <div>
-                            <h3 class="font-bold mb-2">Заботливо</h3>
-                            <p class="text-gray-600">Помогаем бизнесу расти, освобождая вас от забот, связанных с репутацией.</p>
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="bg-white p-6 rounded-lg shadow-sm benefit-item">
-                    <div class="flex items-start">
-                        <div class="text-2xl mr-4">🧩</div>
-                        <div>
-                            <h3 class="font-bold mb-2">Просто</h3>
-                            <p class="text-gray-600">Работаем по простой системе, обеспечивая непрерывный мониторинг и управление репутацией.</p>
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="bg-white p-6 rounded-lg shadow-sm benefit-item">
-                    <div class="flex items-start">
-                        <div class="text-2xl mr-4">✅</div>
-                        <div>
-                            <h3 class="font-bold mb-2">Гарантировано</h3>
-                            <p class="text-gray-600">Завоёвываем доверие клиентов через создание положительного онлайн-образа.</p>
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="bg-white p-6 rounded-lg shadow-sm benefit-item">
-                    <div class="flex items-start">
-                        <div class="text-2xl mr-4">🛡️</div>
-                        <div>
-                            <h3 class="font-bold mb-2">Проактивная защита</h3>
-                            <p class="text-gray-600">Не просто реагируем на негатив, но и предотвращаем его появление.</p>
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="bg-white p-6 rounded-lg shadow-sm benefit-item">
-                    <div class="flex items-start">
-                        <div class="text-2xl mr-4">🎨</div>
-                        <div>
-                            <h3 class="font-bold mb-2">Индивидуальный подход</h3>
-                            <p class="text-gray-600">Разрабатываем стратегию с учётом специфики вашего бизнеса.</p>
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="bg-white p-6 rounded-lg shadow-sm benefit-item">
-                    <div class="flex items-start">
-                        <div class="text-2xl mr-4">🔍</div>
-                        <div>
-                            <h3 class="font-bold mb-2">Прозрачность</h3>
-                            <p class="text-gray-600">Вы всегда в курсе состояния вашей репутации.</p>
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="bg-white p-6 rounded-lg shadow-sm benefit-item">
-                    <div class="flex items-start">
-                        <div class="text-2xl mr-4">📈</div>
-                        <div>
-                            <h3 class="font-bold mb-2">Комплексные решения</h3>
-                            <p class="text-gray-600">Анализируем действия конкурентов для улучшения вашего онлайн-присутствия.</p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </section>
+  // Auto-scroll to bottom
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages, currentChannel, currentServer]);
 
-    <!-- Репутация в надежных руках -->
-    <section class="py-12 bg-white">
-        <div class="container mx-auto px-4">
-            <div class="max-w-4xl mx-auto bg-purple-50 p-8 rounded-lg">
-                <h2 class="text-2xl font-bold text-center mb-6">🤝 Репутация вашего бизнеса в надёжных руках</h2>
-                <p class="text-lg text-center mb-6">🧩 Мы берём на себя управление вашей репутацией, чтобы вы могли сосредоточиться на развитии бизнеса</p>
-                
-                <div class="grid md:grid-cols-2 gap-6 mt-8">
-                    <div class="flex items-start">
-                        <div class="text-xl mr-4">🔍</div>
-                        <div>
-                            <h3 class="font-bold mb-2">Мониторинг отзывов</h3>
-                            <p class="text-gray-600">Круглосуточный контроль всех отзывов о вашем бизнесе.</p>
-                        </div>
-                    </div>
-                    
-                    <div class="flex items-start">
-                        <div class="text-xl mr-4">🧠</div>
-                        <div>
-                            <h3 class="font-bold mb-2">Анализ ситуации</h3>
-                            <p class="text-gray-600">Глубокий анализ всех упоминаний о вашей компании.</p>
-                        </div>
-                    </div>
-                    
-                    <div class="flex items-start">
-                        <div class="text-xl mr-4">🌟</div>
-                        <div>
-                            <h3 class="font-bold mb-2">Формирование положительного фона</h3>
-                            <p class="text-gray-600">Создаём позитивный образ вашего бизнеса.</p>
-                        </div>
-                    </div>
-                    
-                    <div class="flex items-start">
-                        <div class="text-xl mr-4">🕵️‍♂️</div>
-                        <div>
-                            <h3 class="font-bold mb-2">Мониторинг конкурентов</h3>
-                            <p class="text-gray-600">Анализируем действия ваших конкурентов.</p>
-                        </div>
-                    </div>
-                    
-                    <div class="flex items-start">
-                        <div class="text-xl mr-4">📈</div>
-                        <div>
-                            <h3 class="font-bold mb-2">Регулярные отчёты</h3>
-                            <p class="text-gray-600">Подробная аналитика по вашей репутации.</p>
-                        </div>
-                    </div>
-                    
-                    <div class="flex items-start">
-                        <div class="text-xl mr-4">💡</div>
-                        <div>
-                            <h3 class="font-bold mb-2">Поддержка специалистов</h3>
-                            <p class="text-gray-600">PR и SMM-менеджеры работают на ваш бизнес.</p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <!-- Почему репутация важна -->
-    <section class="py-12 bg-gray-50">
-        <div class="container mx-auto px-4">
-            <h2 class="text-2xl font-bold text-center mb-8">❗ Почему репутация - это важно?</h2>
-            
-            <div class="max-w-3xl mx-auto bg-white p-6 rounded-lg shadow-sm">
-                <p class="mb-4">В современном мире более <strong>90% людей</strong> читают отзывы прежде чем воспользоваться услугами какого-либо бизнеса или бренда.</p>
-                <p class="mb-4">Статистические данные действительно это подтверждают:</p>
-                <ul class="list-disc pl-5 mb-4 space-y-2">
-                    <li>Бизнесы ежедневно теряют клиентов из-за репутационных потерь</li>
-                    <li>Один негативный отзыв может стоить вам десятков клиентов</li>
-                    <li>Большинство бизнесов не реагирует на негатив вовремя</li>
-                </ul>
-                <p class="mb-4">С <strong>Репутация+</strong> эта проблема решается:</p>
-                <ul class="list-disc pl-5 mb-4 space-y-2">
-                    <li>У вас появится больше свободного времени</li>
-                    <li>Мы будем круглосуточно защищать ваш бизнес в сети</li>
-                    <li>Вы получите профессиональную поддержку</li>
-                </ul>
-                <p class="text-xl font-bold text-center mt-6">Защита имиджа + Рост доверия = <span class="text-purple-600">Больше клиентов</span></p>
-                <p class="text-center mt-2">Логичный вывод и гарантия надёжности вашего выбора</p>
-            </div>
-        </div>
-    </section>
-
-    <!-- Как работать с нами -->
-    <section class="py-12 bg-white">
-        <div class="container mx-auto px-4">
-            <h2 class="text-2xl font-bold text-center mb-8">🧑‍💻 Как работать с нами?</h2>
-            
-            <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-6xl mx-auto">
-                <div class="bg-purple-50 p-6 rounded-lg feature-card">
-                    <div class="text-3xl mb-3">🔧</div>
-                    <h3 class="text-lg font-bold mb-2">Просто</h3>
-                    <p class="text-gray-600">Выберите нужный модуль и оформите заявку — больше никаких действий от вас не требуется.</p>
-                </div>
-                
-                <div class="bg-purple-50 p-6 rounded-lg feature-card">
-                    <div class="text-3xl mb-3">⚡</div>
-                    <h3 class="text-lg font-bold mb-2">Быстро</h3>
-                    <p class="text-gray-600">Мы оперативно находим все отзывы, анализируем ситуацию и предоставляем отчёты.</p>
-                </div>
-                
-                <div class="bg-purple-50 p-6 rounded-lg feature-card">
-                    <div class="text-3xl mb-3">🛡️</div>
-                    <h3 class="text-lg font-bold mb-2">Надёжно</h3>
-                    <p class="text-gray-600">Работаем по проверенной системе, обеспечивая вам спокойствие и уверенность.</p>
-                </div>
-                
-                <div class="bg-purple-50 p-6 rounded-lg feature-card">
-                    <div class="text-3xl mb-3">🤖</div>
-                    <h3 class="text-lg font-bold mb-2">Автоматизировано</h3>
-                    <p class="text-gray-600">Вы спите — мы работаем. Наша система 24/7 следит за вашей репутацией.</p>
-                </div>
-            </div>
-            
-            <div class="mt-10 max-w-4xl mx-auto bg-white p-6 rounded-lg border border-purple-200">
-                <h3 class="text-xl font-bold mb-4 text-center">🧑‍💻 Привлечение специалистов</h3>
-                <p class="mb-4 text-center">Мы подключаем PR и SMM-менеджеров для анализа и улучшения ваших соцсетей и сайта.</p>
-                <p class="text-center font-bold">За это не нужно платить отдельно — все включено в стоимость модуля!</p>
-            </div>
-            
-            <div class="mt-10 max-w-4xl mx-auto bg-white p-6 rounded-lg border border-purple-200">
-                <h3 class="text-xl font-bold mb-4 text-center">📈 Поддержка роста бизнеса</h3>
-                <p class="text-center">Помогаем вашему бизнесу расти и не отвлекаться, берём на себя все задачи, связанные с репутацией.</p>
-            </div>
-            
-            <div class="mt-10 max-w-4xl mx-auto bg-white p-6 rounded-lg border border-purple-200">
-                <h3 class="text-xl font-bold mb-4 text-center">🌍 Полный контроль площадок</h3>
-                <p class="text-center mb-2">Отслеживаем ключевые площадки:</p>
-                <div class="flex flex-wrap justify-center gap-2">
-                    <span class="bg-purple-100 text-purple-800 px-3 py-1 rounded-full text-sm">Яндекс.Карты</span>
-                    <span class="bg-purple-100 text-purple-800 px-3 py-1 rounded-full text-sm">Google</span>
-                    <span class="bg-purple-100 text-purple-800 px-3 py-1 rounded-full text-sm">2ГИС</span>
-                    <span class="bg-purple-100 text-purple-800 px-3 py-1 rounded-full text-sm">Flamp</span>
-                    <span class="bg-purple-100 text-purple-800 px-3 py-1 rounded-full text-sm">Otzovik</span>
-                    <span class="bg-purple-100 text-purple-800 px-3 py-1 rounded-full text-sm">Соцсети</span>
-                </div>
-                <p class="text-center mt-4 font-bold">🔔 Мгновенно уведомляем о любом негативе!</p>
-            </div>
-            
-            <div class="mt-10 max-w-2xl mx-auto bg-purple-600 text-white p-6 rounded-lg text-center">
-                <h3 class="text-xl font-bold mb-2">🚀 Всё, что вам нужно сделать — это подключиться</h3>
-                <p>Остальное мы берём на себя, обеспечивая надёжное управление вашей репутацией.</p>
-            </div>
-        </div>
-    </section>
-
-    <!-- Модули -->
-    <section class="py-12 bg-gray-50">
-        <div class="container mx-auto px-4">
-            <h2 class="text-2xl font-bold text-center mb-8">📦 Модули управления репутацией</h2>
-            
-            <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
-                <!-- Базовый -->
-                <div class="bg-white p-4 rounded-lg shadow-md border-t-4 border-purple-500 module-card">
-                    <h3 class="text-lg font-bold mb-2">💼 Базовый <span class="float-right">25 000 ₽/мес</span></h3>
-                    <ul class="text-sm space-y-2 mb-4">
-                        <li>✔️ Мониторинг отзывов</li>
-                        <li>✔️ Регулярные отчёты</li>
-                        <li>✔️ Реакция на негатив</li>
-                    </ul>
-                    <p class="text-xs text-gray-500 mb-3">⏱️ Быстрый старт. Для первого теста системы</p>
-                    <button class="w-full bg-purple-600 text-white py-2 rounded-lg font-medium hover:bg-purple-700 transition">
-                        Выбрать модуль
-                    </button>
-                </div>
-                
-                <!-- Базовый+ -->
-                <div class="bg-white p-4 rounded-lg shadow-md border-t-4 border-purple-600 module-card">
-                    <h3 class="text-lg font-bold mb-2">📊 Базовый+ <span class="float-right">35 000 ₽/мес</span></h3>
-                    <ul class="text-sm space-y-2 mb-4">
-                        <li>✔️ Всё из Базового</li>
-                        <li>➕ Доступ к отчёту от PR/SMM-менеджеров</li>
-                        <li>➕ Полная картина цифрового образа</li>
-                    </ul>
-                    <p class="text-xs text-gray-500 mb-3">📑 Для тех, кто хочет не только следить, но и развиваться</p>
-                    <button class="w-full bg-purple-600 text-white py-2 rounded-lg font-medium hover:bg-purple-700 transition">
-                        Выбрать модуль
-                    </button>
-                </div>
-                
-                <!-- Развитие -->
-                <div class="bg-white p-4 rounded-lg shadow-md border-t-4 border-purple-700 module-card">
-                    <h3 class="text-lg font-bold mb-2">🚀 Развитие <span class="float-right">50 000 ₽/мес</span></h3>
-                    <ul class="text-sm space-y-2 mb-4">
-                        <li>✔️ Всё из Базового+</li>
-                        <li>➕ Поддержка и рекомендации</li>
-                        <li>➕ Анализ конкурентов</li>
-                        <li>➕ Оптимизация соцсетей</li>
-                    </ul>
-                    <p class="text-xs text-gray-500 mb-3">Для тех, кто хочет выделяться в своей нише</p>
-                    <button class="w-full bg-purple-700 text-white py-2 rounded-lg font-medium hover:bg-purple-800 transition">
-                        Выбрать модуль
-                    </button>
-                </div>
-                
-                <!-- Максимум -->
-                <div class="bg-white p-4 rounded-lg shadow-md border-t-4 border-purple-800 module-card">
-                    <h3 class="text-lg font-bold mb-2">🏆 Максимум <span class="float-right">70 000 ₽/мес</span></h3>
-                    <ul class="text-sm space-y-2 mb-4">
-                        <li>✔️ Всё включено</li>
-                        <li>➕ Глубокая аналитика</li>
-                        <li>➕ Сопровождение</li>
-                        <li>➕ Приоритетная реакция</li>
-                        <li>➕ Личный менеджер</li>
-                    </ul>
-                    <p class="text-xs text-gray-500 mb-3">Лучший выбор для устойчивого роста и стабильной репутации</p>
-                    <button class="w-full bg-purple-800 text-white py-2 rounded-lg font-medium hover:bg-purple-900 transition">
-                        Выбрать модуль
-                    </button>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <!-- Обратная связь -->
-    <section class="py-12 gradient-bg text-white" id="contact">
-        <div class="container mx-auto px-4">
-            <h2 class="text-2xl font-bold text-center mb-8">🚀 Готовы начать?</h2>
-            
-            <div class="max-w-md mx-auto bg-white rounded-lg shadow-lg overflow-hidden">
-                <div class="p-6 text-gray-800">
-                    <form id="contactForm" action="https://formsubmit.co/zulfat-ilyasov@mail.ru" method="POST">
-                        <input type="hidden" name="_captcha" value="false">
-                        
-                        <div class="mb-4">
-                            <input type="text" name="name" placeholder="Ваше имя" class="w-full px-4 py-2 border rounded-lg" required>
-                        </div>
-                        
-                        <div class="mb-4">
-                            <input type="text" name="company" placeholder="Компания" class="w-full px-4 py-2 border rounded-lg" required>
-                        </div>
-                        
-                        <div class="mb-4">
-                            <input type="email" name="email" placeholder="Email" class="w-full px-4 py-2 border rounded-lg" required>
-                        </div>
-                        
-                        <div class="mb-4">
-                            <input type="tel" name="phone" placeholder="Телефон" class="w-full px-4 py-2 border rounded-lg" required>
-                        </div>
-                        
-                        <button type="submit" class="w-full gradient-bg text-white py-2 px-6 rounded-lg font-bold hover:opacity-90 transition">
-                            🛡️ Начать защиту репутации
-                        </button>
-                    </form>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <!-- Футер -->
-    <footer class="bg-gray-900 text-white py-6">
-        <div class="container mx-auto px-4 text-center">
-            <div class="flex justify-center space-x-6 mb-4">
-                <a href="#" class="text-gray-400 hover:text-white social-icon"><i class="fab fa-telegram"></i></a>
-                <a href="#" class="text-gray-400 hover:text-white social-icon"><i class="fab fa-whatsapp"></i></a>
-            </div>
-            <p class="text-gray-400 text-sm">© 2023 Репутация+ | Комплексное управление репутацией бизнеса</p>
-        </div>
-    </footer>
-
-    <script>
-        // Форма отправки на zulfat-ilyasov@mail.ru
-        document.getElementById('contactForm').addEventListener('submit', function(e) {
-            e.preventDefault();
-            fetch(this.action, {
-                method: 'POST',
-                body: new FormData(this)
-            })
-            .then(() => {
-                alert('✅ Спасибо! Заявка отправлена. Мы скоро свяжемся с вами!');
-                this.reset();
-            })
-            .catch(() => alert('⚠️ Ошибка отправки. Пожалуйста, попробуйте позже.'));
+  // Simulate online users
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setOnlineUsers(prev => {
+        const newUsers = { ...prev };
+        servers.forEach(server => {
+          server.members.forEach(member => {
+            newUsers[member.id] = Math.random() > 0.3; // 70% chance online
+          });
         });
+        return newUsers;
+      });
+    }, 5000);
+    return () => clearInterval(interval);
+  }, [servers]);
+
+  const handleLogin = (e) => {
+    e.preventDefault();
+    const formData = new FormData(e.target);
+    const username = formData.get('username');
+    const password = formData.get('password');
+    
+    if (username && password) {
+      const mockUser = { 
+        id: Date.now(),
+        username, 
+        avatar: `https://placehold.co/40/8b5cf6/ffffff?text=${username[0].toUpperCase()}` 
+      };
+      setUser(mockUser);
+      setCurrentView('main');
+    }
+  };
+
+  const handleRegister = (e) => {
+    e.preventDefault();
+    const formData = new FormData(e.target);
+    const username = formData.get('username');
+    const email = formData.get('email');
+    const password = formData.get('password');
+    
+    if (username && email && password) {
+      const mockUser = { 
+        id: Date.now(),
+        username, 
+        avatar: `https://placehold.co/40/8b5cf6/ffffff?text=${username[0].toUpperCase()}` 
+      };
+      setUser(mockUser);
+      setCurrentView('main');
+    }
+  };
+
+  const handleSendMessage = (e) => {
+    e.preventDefault();
+    if (newMessage.trim() && user && currentServer && currentChannel) {
+      const channelId = `${currentServer.id}-${currentChannel.id}`;
+      const message = {
+        id: Date.now(),
+        username: user.username,
+        content: newMessage,
+        timestamp: new Date().toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' }),
+        avatar: user.avatar
+      };
+      
+      setMessages(prev => ({
+        ...prev,
+        [channelId]: [...(prev[channelId] || []), message]
+      }));
+      
+      setNewMessage('');
+    }
+  };
+
+  const handleCreateServer = () => {
+    if (newServerName.trim() && user) {
+      const newServer = {
+        id: Date.now(),
+        name: newServerName,
+        icon: '🔷',
+        channels: [
+          { id: Date.now() + 1, name: 'общий', type: 'text' },
+          { id: Date.now() + 2, name: 'голосовой', type: 'voice' }
+        ],
+        members: [user]
+      };
+      
+      setServers(prev => [...prev, newServer]);
+      setCurrentServer(newServer);
+      setCurrentChannel(newServer.channels[0]);
+      setShowCreateServer(false);
+      setNewServerName('');
+    }
+  };
+
+  const handleAddFriend = () => {
+    if (friendUsername.trim() && user && friendUsername !== user.username) {
+      const newFriend = {
+        id: Date.now(),
+        username: friendUsername,
+        avatar: `https://placehold.co/40/10b981/ffffff?text=${friendUsername[0].toUpperCase()}`,
+        status: 'online',
+        lastSeen: 'только что'
+      };
+      
+      setFriends(prev => [...prev, newFriend]);
+      setShowAddFriend(false);
+      setFriendUsername('');
+    }
+  };
+
+  const joinServer = (server) => {
+    if (user) {
+      const updatedServer = {
+        ...server,
+        members: [...server.members, user]
+      };
+      
+      setServers(prev => prev.map(s => s.id === server.id ? updatedServer : s));
+      setCurrentServer(updatedServer);
+      setCurrentChannel(updatedServer.channels.find(c => c.type === 'text') || updatedServer.channels[0]);
+    }
+  };
+
+  const getStatusColor = (status) => {
+    switch (status) {
+      case 'online': return 'bg-green-500';
+      case 'idle': return 'bg-yellow-500';
+      case 'dnd': return 'bg-red-500';
+      default: return 'bg-gray-500';
+    }
+  };
+
+  const getCurrentMessages = () => {
+    if (!currentServer || !currentChannel) return [];
+    const channelId = `${currentServer.id}-${currentChannel.id}`;
+    return messages[channelId] || [];
+  };
+
+  if (currentView === 'login') {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900 flex items-center justify-center p-4">
+        <div className="bg-gray-800 rounded-2xl shadow-2xl p-8 w-full max-w-md border border-gray-700">
+          <div className="text-center mb-8">
+            <div className="text-4xl mb-4">🎮</div>
+            <h1 className="text-3xl font-bold text-white mb-2">GameChat</h1>
+            <p className="text-gray-400">Геймерский чат для настоящих профи</p>
+          </div>
+          
+          <button
+            onClick={() => setCurrentView('register')}
+            className="w-full bg-purple-600 hover:bg-purple-700 text-white font-semibold py-3 px-4 rounded-lg mb-4 transition-colors"
+          >
+            Зарегистрироваться
+          </button>
+          
+          <div className="text-center text-gray-400 my-4">или</div>
+          
+          <form onSubmit={handleLogin} className="space-y-4">
+            <div>
+              <input
+                type="text"
+                name="username"
+                placeholder="Имя пользователя"
+                className="w-full bg-gray-700 text-white px-4 py-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+                required
+              />
+            </div>
+            <div>
+              <input
+                type="password"
+                name="password"
+                placeholder="Пароль"
+                className="w-full bg-gray-700 text-white px-4 py-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+                required
+              />
+            </div>
+            <button
+              type="submit"
+              className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-4 rounded-lg transition-colors"
+            >
+              Войти
+            </button>
+          </form>
+        </div>
+      </div>
+    );
+  }
+
+  if (currentView === 'register') {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900 flex items-center justify-center p-4">
+        <div className="bg-gray-800 rounded-2xl shadow-2xl p-8 w-full max-w-md border border-gray-700">
+          <div className="text-center mb-8">
+            <div className="text-4xl mb-4">🎮</div>
+            <h1 className="text-3xl font-bold text-white mb-2">Регистрация</h1>
+            <p className="text-gray-400">Создайте аккаунт для начала игры</p>
+          </div>
+          
+          <form onSubmit={handleRegister} className="space-y-4">
+            <div>
+              <input
+                type="text"
+                name="username"
+                placeholder="Имя пользователя"
+                className="w-full bg-gray-700 text-white px-4 py-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+                required
+              />
+            </div>
+            <div>
+              <input
+                type="email"
+                name="email"
+                placeholder="Email"
+                className="w-full bg-gray-700 text-white px-4 py-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+                required
+              />
+            </div>
+            <div>
+              <input
+                type="password"
+                name="password"
+                placeholder="Пароль"
+                className="w-full bg-gray-700 text-white px-4 py-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+                required
+              />
+            </div>
+            <div>
+              <input
+                type="password"
+                name="confirmPassword"
+                placeholder="Подтвердите пароль"
+                className="w-full bg-gray-700 text-white px-4 py-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+                required
+              />
+            </div>
+            <button
+              type="submit"
+              className="w-full bg-purple-600 hover:bg-purple-700 text-white font-semibold py-3 px-4 rounded-lg transition-colors"
+            >
+              Зарегистрироваться
+            </button>
+          </form>
+          
+          <button
+            onClick={() => setCurrentView('login')}
+            className="w-full mt-4 text-gray-400 hover:text-white transition-colors"
+          >
+            Уже есть аккаунт? Войти
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-gray-900 text-white flex">
+      {/* Sidebar */}
+      <div className="w-16 bg-gray-800 flex flex-col items-center py-4 space-y-6">
+        <div className="w-10 h-10 bg-purple-600 rounded-lg flex items-center justify-center font-bold text-lg">
+          🎮
+        </div>
         
-        // Анимация при скролле
-        const observer = new IntersectionObserver((entries) => {
-            entries.forEach(entry => {
-                if (entry.isIntersecting) {
-                    entry.target.classList.add('animate-fadeIn');
-                }
-            });
-        }, { threshold: 0.1 });
+        {servers.map(server => (
+          <button
+            key={server.id}
+            onClick={() => joinServer(server)}
+            className={`w-10 h-10 rounded-lg flex items-center justify-center text-lg font-bold transition-colors ${
+              currentServer?.id === server.id ? 'bg-blue-600' : 'bg-gray-700 hover:bg-gray-600'
+            }`}
+            title={server.name}
+          >
+            {server.icon}
+          </button>
+        ))}
         
-        document.querySelectorAll('section, .feature-card, .benefit-item, .module-card').forEach(el => observer.observe(el));
-    </script>
-</body>
-</html>
+        <button
+          onClick={() => setShowCreateServer(true)}
+          className="w-10 h-10 bg-gray-700 hover:bg-gray-600 rounded-lg flex items-center justify-center text-lg transition-colors"
+          title="Создать сервер"
+        >
+          +
+        </button>
+      </div>
+
+      {/* Server Panel */}
+      <div className="w-64 bg-gray-800 flex flex-col">
+        <div className="p-4 border-b border-gray-700">
+          <h2 className="font-bold text-lg">{currentServer?.name || 'Выберите сервер'}</h2>
+        </div>
+        
+        <div className="flex-1 p-3">
+          {currentServer && (
+            <>
+              <div className="text-xs text-gray-400 uppercase font-semibold mb-3">Текстовые каналы</div>
+              {currentServer.channels.filter(channel => channel.type === 'text').map(channel => (
+                <button
+                  key={channel.id}
+                  onClick={() => setCurrentChannel(channel)}
+                  className={`w-full text-left px-3 py-2 rounded-md mb-1 transition-colors flex items-center text-sm ${
+                    currentChannel?.id === channel.id ? 'bg-blue-600 text-white' : 'text-gray-300 hover:bg-gray-700'
+                  }`}
+                >
+                  <span className="mr-2">#</span>
+                  {channel.name}
+                </button>
+              ))}
+              
+              <div className="text-xs text-gray-400 uppercase font-semibold mb-3 mt-6">Голосовые каналы</div>
+              {currentServer.channels.filter(channel => channel.type === 'voice').map(channel => (
+                <button
+                  key={channel.id}
+                  className="w-full text-left px-3 py-2 rounded-md mb-1 transition-colors flex items-center text-sm text-gray-300 hover:bg-gray-700"
+                >
+                  <svg className="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M7 4a3 3 0 016 0v4a3 3 0 11-6 0V4zm4 10.93A7.001 7.001 0 0017 8a1 1 0 10-2 0A5 5 0 015 8a1 1 0 00-2 0 7.001 7.001 0 006 6.93V17H6a1 1 0 100 2h8a1 1 0 100-2h-3v-2.07z" clipRule="evenodd" />
+                  </svg>
+                  {channel.name}
+                </button>
+              ))}
+            </>
+          )}
+        </div>
+
+        <div className="p-4 border-t border-gray-700">
+          <div className="flex items-center space-x-3">
+            <img src={user?.avatar} alt={user?.username} className="w-8 h-8 rounded-full" />
+            <div className="flex-1">
+              <div className="font-medium text-sm">{user?.username}</div>
+              <div className="text-xs text-gray-400">В сети</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Main Chat Area */}
+      <div className="flex-1 flex flex-col">
+        {/* Channel Header */}
+        <div className="bg-gray-800 px-6 py-4 border-b border-gray-700 flex items-center justify-between">
+          {currentServer && currentChannel ? (
+            <>
+              <div className="flex items-center space-x-3">
+                <span className="text-gray-400">#</span>
+                <h1 className="text-xl font-semibold">{currentChannel.name}</h1>
+              </div>
+              
+              <div className="flex items-center space-x-4">
+                <button className="text-gray-400 hover:text-white transition-colors">
+                  <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                    <path d="M2 10a8 8 0 018-8v8h8a8 8 0 11-16 0z"></path>
+                    <path d="M12 2.252A8.014 8.014 0 0117.5 8.01 8.014 8.014 0 0112 2.252z"></path>
+                  </svg>
+                </button>
+                
+                <button
+                  onClick={() => setShowAddFriend(true)}
+                  className="bg-green-600 hover:bg-green-700 px-4 py-2 rounded-lg text-sm font-medium transition-colors"
+                >
+                  Добавить друга
+                </button>
+              </div>
+            </>
+          ) : (
+            <div className="text-gray-400">Выберите сервер и канал</div>
+          )}
+        </div>
+
+        {/* Messages */}
+        <div className="flex-1 bg-gray-900 overflow-y-auto p-6">
+          {currentServer && currentChannel ? (
+            getCurrentMessages().map(message => (
+              <div key={message.id} className="mb-4 flex">
+                <img src={message.avatar} alt={message.username} className="w-10 h-10 rounded-full mr-3 flex-shrink-0" />
+                <div className="flex-1">
+                  <div className="flex items-baseline space-x-2 mb-1">
+                    <span className="font-semibold text-sm">{message.username}</span>
+                    <span className="text-xs text-gray-500">{message.timestamp}</span>
+                  </div>
+                  <p className="text-gray-300">{message.content}</p>
+                </div>
+              </div>
+            ))
+          ) : (
+            <div className="text-center text-gray-500 mt-20">
+              <div className="text-6xl mb-4">🎮</div>
+              <h2 className="text-2xl font-bold mb-2">Добро пожаловать в GameChat!</h2>
+              <p>Выберите сервер и канал, чтобы начать общение</p>
+            </div>
+          )}
+          <div ref={messagesEndRef} />
+        </div>
+
+        {/* Message Input */}
+        <div className="bg-gray-800 p-4">
+          {currentServer && currentChannel ? (
+            <form onSubmit={handleSendMessage} className="flex space-x-3">
+              <input
+                type="text"
+                value={newMessage}
+                onChange={(e) => setNewMessage(e.target.value)}
+                placeholder={`Сообщение #${currentChannel.name}`}
+                className="flex-1 bg-gray-700 text-white px-4 py-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                disabled={!currentServer || !currentChannel}
+              />
+              <button
+                type="submit"
+                className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                disabled={!currentServer || !currentChannel || !newMessage.trim()}
+              >
+                Отправить
+              </button>
+            </form>
+          ) : (
+            <div className="text-center text-gray-500 py-2">
+              Выберите канал для отправки сообщений
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Friends Panel */}
+      <div className="w-80 bg-gray-800 flex flex-col">
+        <div className="p-4 border-b border-gray-700">
+          <h3 className="font-bold text-lg">Друзья</h3>
+        </div>
+        
+        {friendRequests.length > 0 && (
+          <div className="p-4 border-b border-gray-700">
+            <div className="text-sm font-semibold text-gray-400 mb-2">Запросы в друзья</div>
+            {friendRequests.map(friend => (
+              <div key={friend.id} className="flex items-center space-x-3 p-2 rounded hover:bg-gray-700">
+                <img src={friend.avatar} alt={friend.username} className="w-8 h-8 rounded-full" />
+                <div className="flex-1">
+                  <div className="text-sm font-medium">{friend.username}</div>
+                </div>
+                <div className="flex space-x-1">
+                  <button className="w-6 h-6 bg-green-600 hover:bg-green-700 rounded flex items-center justify-center text-xs">
+                    ✓
+                  </button>
+                  <button className="w-6 h-6 bg-gray-600 hover:bg-gray-700 rounded flex items-center justify-center text-xs">
+                    ✗
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+        
+        <div className="flex-1 p-4">
+          <div className="text-sm font-semibold text-gray-400 mb-3">В сети ({friends.filter(f => f.status === 'online').length})</div>
+          {friends.filter(f => f.status === 'online').map(friend => (
+            <div key={friend.id} className="flex items-center space-x-3 p-2 rounded hover:bg-gray-700 cursor-pointer">
+              <div className="relative">
+                <img src={friend.avatar} alt={friend.username} className="w-8 h-8 rounded-full" />
+                <div className={`absolute -bottom-1 -right-1 w-3 h-3 rounded-full border-2 border-gray-800 ${getStatusColor(friend.status)}`}></div>
+              </div>
+              <div>
+                <div className="text-sm font-medium">{friend.username}</div>
+                <div className="text-xs text-gray-400">{friend.lastSeen}</div>
+              </div>
+            </div>
+          ))}
+          
+          <div className="text-sm font-semibold text-gray-400 mb-3 mt-6">Не в сети ({friends.filter(f => f.status !== 'online').length})</div>
+          {friends.filter(f => f.status !== 'online').map(friend => (
+            <div key={friend.id} className="flex items-center space-x-3 p-2 rounded hover:bg-gray-700 cursor-pointer">
+              <div className="relative">
+                <img src={friend.avatar} alt={friend.username} className="w-8 h-8 rounded-full" />
+                <div className={`absolute -bottom-1 -right-1 w-3 h-3 rounded-full border-2 border-gray-800 ${getStatusColor(friend.status)}`}></div>
+              </div>
+              <div>
+                <div className="text-sm font-medium">{friend.username}</div>
+                <div className="text-xs text-gray-400">{friend.lastSeen}</div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Create Server Modal */}
+      {showCreateServer && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-gray-800 rounded-2xl p-8 w-96 border border-gray-700">
+            <h2 className="text-2xl font-bold mb-6">Создать сервер</h2>
+            <input
+              type="text"
+              value={newServerName}
+              onChange={(e) => setNewServerName(e.target.value)}
+              placeholder="Название сервера"
+              className="w-full bg-gray-700 text-white px-4 py-3 rounded-lg mb-4 focus:outline-none focus:ring-2 focus:ring-purple-500"
+              onKeyPress={(e) => e.key === 'Enter' && handleCreateServer()}
+            />
+            <div className="flex space-x-4">
+              <button
+                onClick={() => setShowCreateServer(false)}
+                className="flex-1 bg-gray-700 hover:bg-gray-600 text-white py-3 rounded-lg transition-colors"
+              >
+                Отмена
+              </button>
+              <button
+                onClick={handleCreateServer}
+                className="flex-1 bg-purple-600 hover:bg-purple-700 text-white py-3 rounded-lg transition-colors"
+              >
+                Создать
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Add Friend Modal */}
+      {showAddFriend && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-gray-800 rounded-2xl p-8 w-96 border border-gray-700">
+            <h2 className="text-2xl font-bold mb-6">Добавить друга</h2>
+            <input
+              type="text"
+              value={friendUsername}
+              onChange={(e) => setFriendUsername(e.target.value)}
+              placeholder="Имя пользователя"
+              className="w-full bg-gray-700 text-white px-4 py-3 rounded-lg mb-4 focus:outline-none focus:ring-2 focus:ring-purple-500"
+              onKeyPress={(e) => e.key === 'Enter' && handleAddFriend()}
+            />
+            <div className="flex space-x-4">
+              <button
+                onClick={() => setShowAddFriend(false)}
+                className="flex-1 bg-gray-700 hover:bg-gray-600 text-white py-3 rounded-lg transition-colors"
+              >
+                Отмена
+              </button>
+              <button
+                onClick={handleAddFriend}
+                className="flex-1 bg-green-600 hover:bg-green-700 text-white py-3 rounded-lg transition-colors"
+              >
+                Добавить
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
+export default App;
+```
