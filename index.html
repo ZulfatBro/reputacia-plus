@@ -2,94 +2,144 @@
 <html>
 <head>
 <meta charset="UTF-8">
-<title>P2P звонки без серверов</title>
+<title>P2P Звонки</title>
 <style>
-body {
-    background: #0f0f1a;
-    color: white;
-    font-family: sans-serif;
-    text-align: center;
-    padding: 20px;
-}
-textarea {
-    width: 90%;
-    height: 120px;
-    background: #1a1a2e;
-    color: #00e5ff;
-    border: none;
-    padding: 10px;
-    margin-top: 10px;
-    resize: none;
-}
-button {
-    background: #6200ea;
-    color: white;
-    padding: 10px 20px;
-    border: none;
-    margin-top: 10px;
-    cursor: pointer;
-}
-button:hover {
-    background: #3700b3;
-}
+    body {
+        background: #0e0e1a;
+        color: white;
+        font-family: Arial, sans-serif;
+        text-align: center;
+        padding: 30px;
+    }
+    h1 {
+        color: #7a5cff;
+        margin-bottom: 10px;
+    }
+    input, button {
+        padding: 10px;
+        margin: 8px;
+        border: none;
+        border-radius: 5px;
+        font-size: 16px;
+    }
+    input {
+        width: 250px;
+        background: #1a1a2e;
+        color: #00e5ff;
+    }
+    button {
+        background: linear-gradient(90deg, #6a00f4, #00c3ff);
+        color: white;
+        cursor: pointer;
+    }
+    button:hover {
+        opacity: 0.85;
+    }
+    #connect-area {
+        margin-top: 20px;
+    }
+    textarea {
+        width: 90%;
+        height: 100px;
+        margin-top: 10px;
+        background: #1a1a2e;
+        color: #00e5ff;
+        border: none;
+        border-radius: 5px;
+        padding: 10px;
+    }
 </style>
 </head>
 <body>
 
-<h1>Прямой звонок без сервера</h1>
-<p>Шаг 1: Один человек создаёт звонок → копирует код и отправляет другу.<br>
-Шаг 2: Друг вставляет код и подключается.</p>
+<h1>💬 P2P Звонки</h1>
+<p>Введи имя и подключись к другу без серверов</p>
 
-<button onclick="createOffer()">Создать звонок</button><br>
-<textarea id="offer" placeholder="Здесь будет код приглашения"></textarea><br>
+<div id="login">
+    <input type="text" id="myName" placeholder="Твоё имя">
+    <button onclick="start()">Войти</button>
+</div>
 
-<button onclick="createAnswer()">Ответить на звонок</button><br>
-<textarea id="answer" placeholder="Вставьте сюда код, который вам прислали"></textarea><br>
+<div id="connect-area" style="display:none;">
+    <p>Твоё имя: <b id="showName"></b></p>
+    <input type="text" id="friendName" placeholder="Имя друга">
+    <button onclick="callFriend()">Позвонить</button>
 
-<button onclick="applyAnswer()">Подтвердить ответ</button>
+    <h3>Код приглашения</h3>
+    <textarea id="offer"></textarea>
+
+    <h3>Код ответа</h3>
+    <textarea id="answer"></textarea><br>
+    <button onclick="applyAnswer()">Подтвердить</button>
+</div>
 
 <script>
-let pc = new RTCPeerConnection();
-let localStream;
-let remoteAudio = document.createElement('audio');
-remoteAudio.autoplay = true;
+let pc, localStream, remoteAudio;
+let myName = "";
 
-navigator.mediaDevices.getUserMedia({ audio: true }).then(stream => {
-    localStream = stream;
-    stream.getTracks().forEach(track => pc.addTrack(track, stream));
-});
+function start() {
+    myName = document.getElementById("myName").value.trim();
+    if (!myName) { alert("Введи имя"); return; }
 
-pc.ontrack = event => {
-    remoteAudio.srcObject = event.streams[0];
-};
+    document.getElementById("login").style.display = "none";
+    document.getElementById("connect-area").style.display = "block";
+    document.getElementById("showName").textContent = myName;
 
-pc.onicecandidate = event => {
-    if (event.candidate) return;
-    if (pc.localDescription.type === "offer") {
-        document.getElementById("offer").value = btoa(JSON.stringify(pc.localDescription));
-    } else if (pc.localDescription.type === "answer") {
-        document.getElementById("offer").value = btoa(JSON.stringify(pc.localDescription));
-    }
-};
+    initPeer();
+}
 
-async function createOffer() {
+function initPeer() {
+    pc = new RTCPeerConnection({
+        iceServers: [{ urls: 'stun:stun.l.google.com:19302' }]
+    });
+    remoteAudio = document.createElement("audio");
+    remoteAudio.autoplay = true;
+
+    navigator.mediaDevices.getUserMedia({ audio: true }).then(stream => {
+        localStream = stream;
+        stream.getTracks().forEach(track => pc.addTrack(track, stream));
+    });
+
+    pc.ontrack = event => {
+        remoteAudio.srcObject = event.streams[0];
+    };
+
+    pc.onicecandidate = event => {
+        if (!event.candidate) {
+            document.getElementById("offer").value = btoa(JSON.stringify(pc.localDescription));
+        }
+    };
+}
+
+async function callFriend() {
     let offer = await pc.createOffer();
     await pc.setLocalDescription(offer);
 }
 
-async function createAnswer() {
-    let offerCode = document.getElementById("answer").value;
-    let offer = JSON.parse(atob(offerCode));
-    await pc.setRemoteDescription(new RTCSessionDescription(offer));
-    let answer = await pc.createAnswer();
-    await pc.setLocalDescription(answer);
-}
-
 async function applyAnswer() {
-    let answerCode = document.getElementById("answer").value;
+    let answerCode = document.getElementById("answer").value.trim();
+    if (!answerCode) return alert("Вставь код ответа");
+
     let answer = JSON.parse(atob(answerCode));
     await pc.setRemoteDescription(new RTCSessionDescription(answer));
 }
+
+// Для друга: он вставляет код приглашения и генерирует ответ
+document.getElementById("answer").addEventListener("paste", async function(e) {
+    setTimeout(async () => {
+        try {
+            let offerCode = document.getElementById("answer").value.trim();
+            let offer = JSON.parse(atob(offerCode));
+            await pc.setRemoteDescription(new RTCSessionDescription(offer));
+            let answer = await pc.createAnswer();
+            await pc.setLocalDescription(answer);
+        } catch (err) {
+            console.error(err);
+            alert("Ошибка при обработке кода");
+        }
+    }, 50);
+});
 </script>
+
 </body>
 </html>
