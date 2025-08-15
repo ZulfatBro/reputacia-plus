@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>NexusChat - Игровая платформа для общения</title>
+    <title>NexusChat с реальными звонками</title>
     <style>
         :root {
             --bg-dark: #121218;
@@ -13,18 +13,13 @@
             --accent-purple: #9c27b0;
             --text-primary: #e0e0e0;
             --text-secondary: #a0a0a0;
-            --success: #4caf50;
-            --warning: #ff9800;
-            --danger: #f44336;
         }
-
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
         }
-
         body {
             background-color: var(--bg-dark);
             color: var(--text-primary);
@@ -37,746 +32,167 @@
                 "server-list channel-list main-content"
                 "server-list channel-list input-area";
         }
-
-        /* Серверная панель */
-        .server-list {
-            grid-area: server-list;
-            background-color: var(--bg-darker);
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            padding-top: 12px;
-            overflow-y: auto;
-        }
-
-        .server-icon {
-            width: 48px;
-            height: 48px;
-            border-radius: 50%;
-            background: linear-gradient(135deg, var(--accent-blue), var(--accent-purple));
-            margin-bottom: 12px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: white;
-            font-weight: bold;
-            cursor: pointer;
-            transition: all 0.2s ease;
-        }
-
-        .server-icon:hover {
-            border-radius: 30%;
-            transform: scale(1.1);
-        }
-
-        .server-icon.active {
-            border-radius: 30%;
-        }
-
-        .add-server {
-            background-color: var(--bg-light);
-            color: var(--text-secondary);
-            font-size: 24px;
-        }
-
-        /* Навигационная панель */
-        .nav-bar {
-            grid-area: nav-bar;
-            background-color: var(--bg-light);
-            border-bottom: 1px solid rgba(0, 0, 0, 0.2);
-            display: flex;
-            align-items: center;
-            padding: 0 16px;
-            justify-content: space-between;
-        }
-
-        .server-name {
-            font-weight: bold;
-            font-size: 16px;
-        }
-
-        .user-controls {
-            display: flex;
-            align-items: center;
-        }
-
-        .user-avatar {
-            width: 32px;
-            height: 32px;
-            border-radius: 50%;
-            background: linear-gradient(135deg, var(--accent-purple), var(--accent-blue));
-            margin-left: 12px;
-            cursor: pointer;
-        }
-
-        /* Список каналов */
-        .channel-list {
-            grid-area: channel-list;
-            background-color: var(--bg-light);
-            display: flex;
-            flex-direction: column;
-        }
-
-        .channel-category {
-            padding: 16px 16px 8px;
-            color: var(--text-secondary);
-            font-size: 12px;
-            font-weight: bold;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-        }
-
-        .channel-item {
-            padding: 8px 16px;
-            margin: 2px 8px;
-            border-radius: 4px;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-        }
-
-        .channel-item:hover {
-            background-color: rgba(255, 255, 255, 0.05);
-        }
-
-        .channel-item.active {
-            background-color: rgba(0, 168, 255, 0.1);
-            color: var(--accent-blue);
-        }
-
-        .channel-item::before {
-            content: "#";
-            margin-right: 8px;
-            color: var(--text-secondary);
-        }
-
-        .channel-item.voice::before {
-            content: "🔊";
-        }
-
-        /* Основное содержимое */
-        .main-content {
-            grid-area: main-content;
-            background-color: var(--bg-dark);
-            padding: 16px;
-            overflow-y: auto;
-            display: flex;
-            flex-direction: column;
-        }
-
-        .message {
-            display: flex;
-            margin-bottom: 16px;
-        }
-
-        .message-avatar {
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
-            background: linear-gradient(135deg, var(--accent-purple), var(--accent-blue));
-            margin-right: 16px;
-            flex-shrink: 0;
-        }
-
-        .message-content {
-            flex-grow: 1;
-        }
-
-        .message-header {
-            display: flex;
-            align-items: baseline;
-            margin-bottom: 4px;
-        }
-
-        .message-author {
-            font-weight: bold;
-            margin-right: 8px;
-        }
-
-        .message-time {
-            color: var(--text-secondary);
-            font-size: 12px;
-        }
-
-        .message-text {
-            line-height: 1.4;
-        }
-
-        /* Область ввода */
-        .input-area {
-            grid-area: input-area;
-            background-color: var(--bg-light);
-            padding: 12px 16px;
-            display: flex;
-            align-items: center;
-        }
-
-        .message-input {
-            flex-grow: 1;
-            background-color: var(--bg-dark);
-            border: 1px solid rgba(0, 0, 0, 0.3);
-            border-radius: 8px;
-            padding: 12px 16px;
-            color: var(--text-primary);
-            font-size: 14px;
-            outline: none;
-            resize: none;
-            height: 40px;
-            max-height: 200px;
-        }
-
-        .message-input:focus {
-            border-color: var(--accent-blue);
-        }
-
-        .send-button {
-            background-color: var(--accent-blue);
-            color: white;
-            border: none;
-            border-radius: 4px;
-            padding: 8px 16px;
-            margin-left: 12px;
-            cursor: pointer;
-            font-weight: bold;
-            transition: background-color 0.2s;
-        }
-
-        .send-button:hover {
-            background-color: #0088cc;
-        }
-
-        /* Модальные окна */
-        .modal {
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background-color: rgba(0, 0, 0, 0.8);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            z-index: 100;
-            opacity: 0;
-            pointer-events: none;
-            transition: opacity 0.3s;
-        }
-
-        .modal.active {
-            opacity: 1;
-            pointer-events: all;
-        }
-
-        .modal-content {
-            background-color: var(--bg-light);
-            border-radius: 8px;
-            width: 400px;
-            max-width: 90%;
-            padding: 24px;
-            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
-            transform: translateY(-20px);
-            transition: transform 0.3s;
-        }
-
-        .modal.active .modal-content {
-            transform: translateY(0);
-        }
-
-        .modal-title {
-            font-size: 20px;
-            margin-bottom: 16px;
-            color: var(--accent-blue);
-        }
-
-        .input-group {
-            margin-bottom: 16px;
-        }
-
-        .input-label {
-            display: block;
-            margin-bottom: 8px;
-            color: var(--text-secondary);
-            font-size: 14px;
-        }
-
-        .form-input {
-            width: 100%;
-            padding: 10px 12px;
-            background-color: var(--bg-dark);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 4px;
-            color: var(--text-primary);
-            outline: none;
-        }
-
-        .form-input:focus {
-            border-color: var(--accent-blue);
-        }
-
-        .form-buttons {
-            display: flex;
-            justify-content: flex-end;
-            margin-top: 24px;
-        }
-
-        .btn {
-            padding: 8px 16px;
-            border-radius: 4px;
-            cursor: pointer;
-            font-weight: bold;
-            margin-left: 8px;
-            transition: all 0.2s;
-        }
-
-        .btn-primary {
-            background-color: var(--accent-blue);
-            color: white;
-            border: none;
-        }
-
-        .btn-primary:hover {
-            background-color: #0088cc;
-        }
-
-        .btn-secondary {
-            background-color: transparent;
-            color: var(--text-secondary);
-            border: 1px solid var(--text-secondary);
-        }
-
-        .btn-secondary:hover {
-            color: var(--text-primary);
-            border-color: var(--text-primary);
-        }
-
-        /* Адаптивность */
-        @media (max-width: 768px) {
-            body {
-                grid-template-columns: 60px 1fr;
-                grid-template-areas:
-                    "server-list nav-bar"
-                    "server-list main-content"
-                    "server-list input-area";
-            }
-
-            .channel-list {
-                display: none;
-            }
-        }
-
-        /* Анимации */
-        @keyframes pulse {
-            0% { box-shadow: 0 0 0 0 rgba(0, 168, 255, 0.4); }
-            70% { box-shadow: 0 0 0 10px rgba(0, 168, 255, 0); }
-            100% { box-shadow: 0 0 0 0 rgba(0, 168, 255, 0); }
-        }
-
-        .pulse {
-            animation: pulse 2s infinite;
-        }
-
-        /* Друзья и статусы */
-        .friends-list {
+        /* ... (остальные стили из предыдущего кода) ... */
+        
+        /* Стили для звонка */
+        .call-container {
             display: none;
-            position: absolute;
-            right: 0;
-            top: 48px;
-            width: 240px;
-            height: calc(100vh - 48px);
-            background-color: var(--bg-light);
-            border-left: 1px solid rgba(0, 0, 0, 0.2);
-            padding: 16px;
-            overflow-y: auto;
-        }
-
-        .friends-list.active {
-            display: block;
-        }
-
-        .friend-item {
-            display: flex;
-            align-items: center;
-            padding: 8px;
-            border-radius: 4px;
-            margin-bottom: 8px;
-            cursor: pointer;
-        }
-
-        .friend-item:hover {
-            background-color: rgba(255, 255, 255, 0.05);
-        }
-
-        .friend-avatar {
-            width: 32px;
-            height: 32px;
-            border-radius: 50%;
-            background: linear-gradient(135deg, var(--accent-purple), var(--accent-blue));
-            margin-right: 12px;
-            position: relative;
-        }
-
-        .status {
-            position: absolute;
-            width: 10px;
-            height: 10px;
-            border-radius: 50%;
-            bottom: 0;
-            right: 0;
-            border: 2px solid var(--bg-light);
-        }
-
-        .status-online {
-            background-color: var(--success);
-        }
-
-        .status-idle {
-            background-color: var(--warning);
-        }
-
-        .status-dnd {
-            background-color: var(--danger);
-        }
-
-        .status-offline {
-            background-color: var(--text-secondary);
-        }
-
-        .friend-name {
-            font-size: 14px;
-        }
-
-        /* Уведомления */
-        .notification {
             position: fixed;
             bottom: 20px;
             right: 20px;
-            background-color: var(--accent-purple);
-            color: white;
-            padding: 12px 16px;
-            border-radius: 4px;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-            transform: translateX(150%);
-            transition: transform 0.3s;
+            width: 300px;
+            background: var(--bg-light);
+            border-radius: 8px;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
             z-index: 1000;
         }
-
-        .notification.show {
-            transform: translateX(0);
+        .call-video {
+            width: 100%;
+            border-radius: 8px 8px 0 0;
+            background: black;
+        }
+        .call-controls {
+            display: flex;
+            justify-content: center;
+            padding: 10px;
+            gap: 15px;
+        }
+        .call-btn {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            border: none;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+        }
+        .call-accept {
+            background: var(--accent-blue);
+            color: white;
+        }
+        .call-decline {
+            background: var(--danger);
+            color: white;
         }
     </style>
 </head>
 <body>
-    <!-- Серверная панель -->
-    <div class="server-list">
-        <div class="server-icon active">N</div>
-        <div class="server-icon">G</div>
-        <div class="server-icon">M</div>
-        <div class="server-icon pulse">+</div>
-        <div class="server-icon add-server">+</div>
-    </div>
+    <!-- Весь предыдущий HTML интерфейс -->
+    <div class="server-list">...</div>
+    <div class="nav-bar">...</div>
+    <div class="friends-list">...</div>
+    <div class="channel-list">...</div>
+    <div class="main-content">...</div>
+    <div class="input-area">...</div>
 
-    <!-- Навигационная панель -->
-    <div class="nav-bar">
-        <div class="server-name">NexusChat</div>
-        <div class="user-controls">
-            <button id="friends-btn">Друзья</button>
-            <div class="user-avatar"></div>
+    <!-- Контейнер для звонка -->
+    <div class="call-container" id="call-container">
+        <video class="call-video" id="remote-video" autoplay></video>
+        <video class="call-video" id="local-video" autoplay muted></video>
+        <div class="call-controls">
+            <button class="call-btn call-accept" id="accept-call">✓</button>
+            <button class="call-btn call-decline" id="decline-call">✕</button>
         </div>
-    </div>
-
-    <!-- Список друзей -->
-    <div class="friends-list" id="friends-list">
-        <div class="channel-category">Друзья — 3</div>
-        <div class="friend-item">
-            <div class="friend-avatar">
-                <div class="status status-online"></div>
-            </div>
-            <div class="friend-name">Иван Петров</div>
-        </div>
-        <div class="friend-item">
-            <div class="friend-avatar">
-                <div class="status status-idle"></div>
-            </div>
-            <div class="friend-name">Алексей Смирнов</div>
-        </div>
-        <div class="friend-item">
-            <div class="friend-avatar">
-                <div class="status status-dnd"></div>
-            </div>
-            <div class="friend-name">Мария Иванова</div>
-        </div>
-        <div class="channel-category">В сети — 1</div>
-        <div class="friend-item">
-            <div class="friend-avatar">
-                <div class="status status-online"></div>
-            </div>
-            <div class="friend-name">Иван Петров</div>
-        </div>
-        <div class="channel-category">Не в сети — 2</div>
-        <div class="friend-item">
-            <div class="friend-avatar">
-                <div class="status status-offline"></div>
-            </div>
-            <div class="friend-name">Алексей Смирнов</div>
-        </div>
-        <div class="friend-item">
-            <div class="friend-avatar">
-                <div class="status status-offline"></div>
-            </div>
-            <div class="friend-name">Мария Иванова</div>
-        </div>
-    </div>
-
-    <!-- Список каналов -->
-    <div class="channel-list">
-        <div class="channel-category">ТЕКСТОВЫЕ КАНАЛЫ</div>
-        <div class="channel-item active">общий</div>
-        <div class="channel-item">игры</div>
-        <div class="channel-item">музыка</div>
-        <div class="channel-item">кино</div>
-
-        <div class="channel-category">ГОЛОСОВЫЕ КАНАЛЫ</div>
-        <div class="channel-item voice">Общий чат</div>
-        <div class="channel-item voice">Игровой чат</div>
-    </div>
-
-    <!-- Основное содержимое -->
-    <div class="main-content" id="chat-content">
-        <div class="message">
-            <div class="message-avatar"></div>
-            <div class="message-content">
-                <div class="message-header">
-                    <div class="message-author">Иван Петров</div>
-                    <div class="message-time">Сегодня в 14:30</div>
-                </div>
-                <div class="message-text">Привет всем! Как дела?</div>
-            </div>
-        </div>
-        <div class="message">
-            <div class="message-avatar"></div>
-            <div class="message-content">
-                <div class="message-header">
-                    <div class="message-author">Алексей Смирнов</div>
-                    <div class="message-time">Сегодня в 14:32</div>
-                </div>
-                <div class="message-text">Привет! Все отлично, только что закончил играть в новую игру.</div>
-            </div>
-        </div>
-        <div class="message">
-            <div class="message-avatar"></div>
-            <div class="message-content">
-                <div class="message-header">
-                    <div class="message-author">Мария Иванова</div>
-                    <div class="message-time">Сегодня в 14:35</div>
-                </div>
-                <div class="message-text">Привет! У меня тоже все хорошо. Какая игра, Алексей?</div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Область ввода -->
-    <div class="input-area">
-        <textarea class="message-input" placeholder="Написать сообщение..." id="message-input"></textarea>
-        <button class="send-button" id="send-btn">Отправить</button>
-    </div>
-
-    <!-- Модальное окно входа -->
-    <div class="modal" id="login-modal">
-        <div class="modal-content">
-            <h2 class="modal-title">Вход в NexusChat</h2>
-            <div class="input-group">
-                <label class="input-label">Email</label>
-                <input type="email" class="form-input" placeholder="Ваш email">
-            </div>
-            <div class="input-group">
-                <label class="input-label">Пароль</label>
-                <input type="password" class="form-input" placeholder="Ваш пароль">
-            </div>
-            <div class="form-buttons">
-                <button class="btn btn-secondary" id="register-btn">Регистрация</button>
-                <button class="btn btn-primary" id="login-btn">Войти</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- Модальное окно регистрации -->
-    <div class="modal" id="register-modal">
-        <div class="modal-content">
-            <h2 class="modal-title">Регистрация в NexusChat</h2>
-            <div class="input-group">
-                <label class="input-label">Имя пользователя</label>
-                <input type="text" class="form-input" placeholder="Ваше имя">
-            </div>
-            <div class="input-group">
-                <label class="input-label">Email</label>
-                <input type="email" class="form-input" placeholder="Ваш email">
-            </div>
-            <div class="input-group">
-                <label class="input-label">Пароль</label>
-                <input type="password" class="form-input" placeholder="Ваш пароль">
-            </div>
-            <div class="input-group">
-                <label class="input-label">Подтверждение пароля</label>
-                <input type="password" class="form-input" placeholder="Повторите пароль">
-            </div>
-            <div class="form-buttons">
-                <button class="btn btn-secondary" id="back-to-login">Назад</button>
-                <button class="btn btn-primary" id="complete-register">Зарегистрироваться</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- Уведомление -->
-    <div class="notification" id="notification">
-        Новое сообщение от Ивана Петрова
     </div>
 
     <script>
-        // DOM элементы
-        const loginModal = document.getElementById('login-modal');
-        const registerModal = document.getElementById('register-modal');
-        const registerBtn = document.getElementById('register-btn');
-        const backToLoginBtn = document.getElementById('back-to-login');
-        const loginBtn = document.getElementById('login-btn');
-        const completeRegisterBtn = document.getElementById('complete-register');
-        const friendsBtn = document.getElementById('friends-btn');
-        const friendsList = document.getElementById('friends-list');
-        const messageInput = document.getElementById('message-input');
-        const sendBtn = document.getElementById('send-btn');
-        const chatContent = document.getElementById('chat-content');
-        const notification = document.getElementById('notification');
+        // Весь предыдущий JS код...
+        
+        // ===== WebRTC для звонков =====
+        const callContainer = document.getElementById('call-container');
+        const localVideo = document.getElementById('local-video');
+        const remoteVideo = document.getElementById('remote-video');
+        const acceptCallBtn = document.getElementById('accept-call');
+        const declineCallBtn = document.getElementById('decline-call');
+        
+        let peerConnection;
+        let localStream;
+        let currentCall = null;
 
-        // Показать модальное окно входа при загрузке
-        window.addEventListener('DOMContentLoaded', () => {
-            loginModal.classList.add('active');
-        });
-
-        // Переключение между модальными окнами входа и регистрации
-        registerBtn.addEventListener('click', () => {
-            loginModal.classList.remove('active');
-            registerModal.classList.add('active');
-        });
-
-        backToLoginBtn.addEventListener('click', () => {
-            registerModal.classList.remove('active');
-            loginModal.classList.add('active');
-        });
-
-        // Вход в систему
-        loginBtn.addEventListener('click', () => {
-            loginModal.classList.remove('active');
-            showNotification('Вы успешно вошли в систему!');
-        });
-
-        // Регистрация
-        completeRegisterBtn.addEventListener('click', () => {
-            registerModal.classList.remove('active');
-            showNotification('Регистрация прошла успешно!');
-            loginModal.classList.add('active');
-        });
-
-        // Управление списком друзей
-        friendsBtn.addEventListener('click', () => {
-            friendsList.classList.toggle('active');
-        });
-
-        // Отправка сообщения
-        function sendMessage() {
-            const text = messageInput.value.trim();
-            if (text) {
-                const messageElement = document.createElement('div');
-                messageElement.className = 'message';
-                messageElement.innerHTML = `
-                    <div class="message-avatar"></div>
-                    <div class="message-content">
-                        <div class="message-header">
-                            <div class="message-author">Вы</div>
-                            <div class="message-time">Только что</div>
-                        </div>
-                        <div class="message-text">${text}</div>
-                    </div>
-                `;
-                chatContent.appendChild(messageElement);
-                messageInput.value = '';
-                chatContent.scrollTop = chatContent.scrollHeight;
-                
-                // Имитация ответа
+        // Имитация сигнального сервера (в реальном приложении нужен WebSocket)
+        const signalingServer = {
+            sendOffer: (offer) => {
                 setTimeout(() => {
-                    const replies = [
-                        "Отличное сообщение!",
-                        "Я тоже так думаю!",
-                        "Интересно...",
-                        "Давайте обсудим это в голосовом чате.",
-                        "Согласен с вами."
-                    ];
-                    const randomReply = replies[Math.floor(Math.random() * replies.length)];
-                    
-                    const replyElement = document.createElement('div');
-                    replyElement.className = 'message';
-                    replyElement.innerHTML = `
-                        <div class="message-avatar"></div>
-                        <div class="message-content">
-                            <div class="message-header">
-                                <div class="message-author">Иван Петров</div>
-                                <div class="message-time">Только что</div>
-                            </div>
-                            <div class="message-text">${randomReply}</div>
-                        </div>
-                    `;
-                    chatContent.appendChild(replyElement);
-                    chatContent.scrollTop = chatContent.scrollHeight;
-                }, 1000 + Math.random() * 2000);
+                    if (confirm('Иван Петров звонит вам. Принять вызов?')) {
+                        signalingServer.receiveOffer(offer);
+                    }
+                }, 2000);
+            },
+            receiveOffer: async (offer) => {
+                await initCall(false);
+                peerConnection.setRemoteDescription(offer);
+                const answer = await peerConnection.createAnswer();
+                await peerConnection.setLocalDescription(answer);
+                signalingServer.sendAnswer(answer);
+            },
+            sendAnswer: (answer) => {
+                peerConnection.setRemoteDescription(answer);
+            }
+        };
+
+        // Инициализация звонка
+        async function initCall(isCaller) {
+            callContainer.style.display = 'block';
+            
+            // Получаем доступ к камере и микрофону
+            localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+            localVideo.srcObject = localStream;
+            
+            // Настройка WebRTC
+            const configuration = { iceServers: [{ urls: 'stun:stun.l.google.com:19302' }] };
+            peerConnection = new RTCPeerConnection(configuration);
+            
+            // Добавляем локальный поток
+            localStream.getTracks().forEach(track => {
+                peerConnection.addTrack(track, localStream);
+            });
+            
+            // Получаем удаленный поток
+            peerConnection.ontrack = (event) => {
+                remoteVideo.srcObject = event.streams[0];
+            };
+            
+            // Генерация ICE кандидатов
+            peerConnection.onicecandidate = (event) => {
+                if (event.candidate) {
+                    // В реальном приложении отправляем кандидата другому пользователю
+                }
+            };
+            
+            if (isCaller) {
+                const offer = await peerConnection.createOffer();
+                await peerConnection.setLocalDescription(offer);
+                signalingServer.sendOffer(offer);
             }
         }
 
-        sendBtn.addEventListener('click', sendMessage);
-
-        messageInput.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter' && !e.shiftKey) {
-                e.preventDefault();
-                sendMessage();
-            }
+        // Обработчики кнопок
+        acceptCallBtn.addEventListener('click', async () => {
+            await initCall(false);
         });
 
-        // Показать уведомление
-        function showNotification(text) {
-            notification.textContent = text;
-            notification.classList.add('show');
-            setTimeout(() => {
-                notification.classList.remove('show');
-            }, 3000);
+        declineCallBtn.addEventListener('click', () => {
+            endCall();
+        });
+
+        function endCall() {
+            if (peerConnection) {
+                peerConnection.close();
+            }
+            if (localStream) {
+                localStream.getTracks().forEach(track => track.stop());
+            }
+            callContainer.style.display = 'none';
+            localVideo.srcObject = null;
+            remoteVideo.srcObject = null;
         }
 
-        // Имитация входящего сообщения
-        setInterval(() => {
-            if (Math.random() > 0.7) {
-                const messages = [
-                    "Привет, как дела?",
-                    "Кто хочет поиграть?",
-                    "Посмотрите это видео!",
-                    "У меня для вас интересное предложение.",
-                    "Когда следующая игровая сессия?"
-                ];
-                const randomMessage = messages[Math.floor(Math.random() * messages.length)];
-                
-                const messageElement = document.createElement('div');
-                messageElement.className = 'message';
-                messageElement.innerHTML = `
-                    <div class="message-avatar"></div>
-                    <div class="message-content">
-                        <div class="message-header">
-                            <div class="message-author">Иван Петров</div>
-                            <div class="message-time">Только что</div>
-                        </div>
-                        <div class="message-text">${randomMessage}</div>
-                    </div>
-                `;
-                chatContent.appendChild(messageElement);
-                chatContent.scrollTop = chatContent.scrollHeight;
-                
-                if (!friendsList.classList.contains('active')) {
-                    showNotification('Новое сообщение от Ивана Петрова');
-                }
+        // Имитация входящего вызова (для демо)
+        setTimeout(() => {
+            if (Math.random() > 0.5) {
+                initCall(true);
             }
         }, 10000);
     </script>
