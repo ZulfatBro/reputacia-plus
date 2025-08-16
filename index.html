@@ -4,28 +4,31 @@
 <meta charset="UTF-8">
 <title>Zulfat Voice Chat</title>
 <style>
-  body { font-family: sans-serif; padding: 20px; background: #1e1e1e; color: #fff; }
-  input, button { font-size: 16px; margin: 5px; padding: 5px; }
-  #roomDiv { display: none; margin-top: 20px; }
-  audio { display: block; margin: 5px 0; }
+  body { font-family: Arial; background: #222; color: #fff; text-align: center; }
+  #login, #chat { margin-top: 50px; }
+  input { padding: 10px; font-size: 16px; }
+  button { padding: 10px; font-size: 16px; }
+  ul { list-style: none; padding: 0; }
+  li { margin: 5px 0; }
 </style>
 </head>
 <body>
 
-<h1>Zulfat Voice Chat</h1>
-
-<div id="loginDiv">
-  <input type="text" id="username" placeholder="Введите ваше имя"/>
-  <button id="joinBtn">Войти</button>
+<div id="login">
+  <h1>Введите имя</h1>
+  <input type="text" id="username" placeholder="Имя">
+  <button id="joinBtn">Войти в комнату</button>
 </div>
 
-<div id="roomDiv">
-  <h2>Комната: main</h2>
-  <div id="usersList"></div>
+<div id="chat" style="display:none;">
+  <h1>Комната Zulfat</h1>
+  <h3>Участники:</h3>
+  <ul id="users"></ul>
+  <audio id="remoteAudio" autoplay></audio>
 </div>
 
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
 
 <script>
 const firebaseConfig = {
@@ -40,99 +43,79 @@ const firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
 
-const loginDiv = document.getElementById("loginDiv");
-const roomDiv = document.getElementById("roomDiv");
 const joinBtn = document.getElementById("joinBtn");
 const usernameInput = document.getElementById("username");
-const usersListDiv = document.getElementById("usersList");
+const loginDiv = document.getElementById("login");
+const chatDiv = document.getElementById("chat");
+const usersList = document.getElementById("users");
+const remoteAudio = document.getElementById("remoteAudio");
 
-let username, localStream;
-let pcs = {};
-let myId;
-const ROOM = "main";
+let localStream;
+let peers = {};
+let username;
 
 joinBtn.onclick = async () => {
   username = usernameInput.value.trim();
-  if(!username) return alert("Введите имя");
-
+  if(!username) return alert("Введите имя!");
   loginDiv.style.display = "none";
-  roomDiv.style.display = "block";
+  chatDiv.style.display = "block";
 
-  localStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+  // получаем микрофон
+  localStream = await navigator.mediaDevices.getUserMedia({audio:true});
+  
+  // добавляем себя в базу участников
+  const userRef = db.ref("room/users/" + username);
+  userRef.set(true);
+  userRef.onDisconnect().remove();
 
-  const usersRef = db.ref("rooms/" + ROOM + "/users");
-  myId = usersRef.push({ name: username }).key;
-
-  // Удаляем пользователя при выходе
-  window.addEventListener("beforeunload", () => {
-    usersRef.child(myId).remove();
+  // слушаем список пользователей
+  db.ref("room/users").on("value", snapshot => {
+    usersList.innerHTML = "";
+    snapshot.forEach(s => {
+      const li = document.createElement("li");
+      li.textContent = s.key + (s.key === username ? " (Вы)" : "");
+      usersList.appendChild(li);
+    });
   });
 
-  // Обновляем список пользователей
-  usersRef.on("value", snap => {
-    usersListDiv.innerHTML = "";
-    const users = snap.val() || {};
-    for (let key in users) {
-      usersListDiv.innerHTML += `<div>${users[key].name}</div>`;
-      if(key !== myId && !pcs[key]) {
-        createOffer(key);
-      }
-    }
-  });
-
-  // Сигнализация
-  const signalsRef = db.ref("rooms/" + ROOM + "/signals");
-  signalsRef.on("child_added", async snap => {
+  // создаем peer connection для каждого нового пользователя
+  db.ref("room/offers").on("child_added", async snap => {
     const data = snap.val();
-    if(data.to === myId) {
-      if(data.type === "offer") {
-        const pc = createPeerConnection(data.from);
-        await pc.setRemoteDescription(new RTCSessionDescription(data.sdp));
-        const answer = await pc.createAnswer();
-        await pc.setLocalDescription(answer);
-        signalsRef.push({ from: myId, to: data.from, type: "answer", sdp: answer });
-      } else if(data.type === "answer") {
-        const pc = pcs[data.from];
-        await pc.setRemoteDescription(new RTCSessionDescription(data.sdp));
-      } else if(data.type === "candidate") {
-        const pc = pcs[data.from];
-        await pc.addIceCandidate(new RTCIceCandidate(data.candidate));
-      }
-    }
+    if(data.to !== username) return;
+    const pc = new RTCPeerConnection();
+    peers[data.from] = pc;
+    localStream.getTracks().forEach(track => pc.addTrack(track, localStream));
+    pc.ontrack = e => { remoteAudio.srcObject = e.streams[0]; };
+
+    await pc.setRemoteDescription(new RTCSessionDescription(data.offer));
+    const answer = await pc.createAnswer();
+    await pc.setLocalDescription(answer);
+    db.ref("room/answers/" + data.from + "_" + username).set({answer: answer});
+  });
+
+  db.ref("room/answers").on("child_added", async snap => {
+    const key = snap.key;
+    const [from, to] = key.split("_");
+    if(to !== username) return;
+    const pc = peers[from];
+    if(!pc) return;
+    await pc.setRemoteDescription(new RTCSessionDescription(snap.val().answer));
+  });
+
+  // инициируем соединение с уже подключенными
+  db.ref("room/users").once("value").then(snapshot => {
+    snapshot.forEach(async s => {
+      if(s.key === username) return;
+      const pc = new RTCPeerConnection();
+      peers[s.key] = pc;
+      localStream.getTracks().forEach(track => pc.addTrack(track, localStream));
+      pc.ontrack = e => { remoteAudio.srcObject = e.streams[0]; };
+      const offer = await pc.createOffer();
+      await pc.setLocalDescription(offer);
+      db.ref("room/offers").push({from: username, to: s.key, offer: offer});
+    });
   });
 };
-
-function createPeerConnection(peerId) {
-  const pc = new RTCPeerConnection({ iceServers: [{ urls: "stun:stun.l.google.com:19302" }] });
-  pcs[peerId] = pc;
-
-  localStream.getTracks().forEach(track => pc.addTrack(track, localStream));
-
-  pc.ontrack = event => {
-    if(!document.getElementById("audio_" + peerId)) {
-      const audio = document.createElement("audio");
-      audio.id = "audio_" + peerId;
-      audio.autoplay = true;
-      audio.srcObject = event.streams[0];
-      roomDiv.appendChild(audio);
-    }
-  };
-
-  pc.onicecandidate = event => {
-    if(event.candidate) {
-      db.ref("rooms/" + ROOM + "/signals").push({ from: myId, to: peerId, type: "candidate", candidate: event.candidate });
-    }
-  };
-
-  return pc;
-}
-
-async function createOffer(peerId) {
-  const pc = createPeerConnection(peerId);
-  const offer = await pc.createOffer();
-  await pc.setLocalDescription(offer);
-  db.ref("rooms/" + ROOM + "/signals").push({ from: myId, to: peerId, type: "offer", sdp: offer });
-}
 </script>
 </body>
 </html>
