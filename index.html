@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Voice Chat</title>
+    <title>Zulfat Voice Chat</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -45,6 +45,9 @@
         #leaveBtn {
             background: #ed4245;
         }
+        #leaveBtn:hover {
+            background: #c03537;
+        }
         #usersList {
             margin: 15px 0;
         }
@@ -56,6 +59,9 @@
             display: flex;
             justify-content: space-between;
         }
+        .user-you {
+            border-left: 4px solid #5865f2;
+        }
         .status {
             display: inline-block;
             width: 10px;
@@ -65,19 +71,29 @@
         }
         .online { background: #3ba55d; }
         .offline { background: #ed4245; }
+        #statusMessage {
+            margin: 10px 0;
+            padding: 10px;
+            border-radius: 4px;
+        }
+        .error { background: #ed4245; }
+        .info { background: #5865f2; }
+        .success { background: #3ba55d; }
         #audioContainer { display: none; }
     </style>
 </head>
 <body>
+    <h1>Zulfat Voice Chat</h1>
+
     <div id="loginDiv">
         <h2>Вход в чат</h2>
         <input type="text" id="username" placeholder="Ваше имя" required>
         <button id="joinBtn">Войти в чат</button>
-        <div id="errorMsg" style="color: #ed4245; margin-top: 10px;"></div>
+        <div id="statusMessage"></div>
     </div>
 
     <div id="roomDiv" style="display: none;">
-        <h2>Участники чата</h2>
+        <h2>Участники чата <small id="roomStatus">(Подключение...)</small></h2>
         <div id="usersList"></div>
         <button id="leaveBtn">Покинуть чат</button>
     </div>
@@ -110,32 +126,44 @@
         const leaveBtn = document.getElementById('leaveBtn');
         const usernameInput = document.getElementById('username');
         const usersList = document.getElementById('usersList');
-        const errorMsg = document.getElementById('errorMsg');
+        const statusMessage = document.getElementById('statusMessage');
+        const roomStatus = document.getElementById('roomStatus');
+        const audioContainer = document.getElementById('audioContainer');
 
         // Глобальные переменные
         let localStream;
         let peerConnections = {};
         let currentUserId;
         const roomName = 'main-room';
+        let firebaseConnected = false;
 
         // Проверка подключения к Firebase
         function checkFirebaseConnection() {
             const connectedRef = db.ref(".info/connected");
             connectedRef.on("value", (snap) => {
-                if (snap.val() === true) {
-                    console.log("Подключено к Firebase");
-                    errorMsg.textContent = "";
+                firebaseConnected = snap.val() === true;
+                if (firebaseConnected) {
+                    showStatus("Подключено к Firebase", "success");
                 } else {
-                    console.log("Нет подключения к Firebase");
-                    errorMsg.textContent = "Ошибка подключения к серверу. Проверьте интернет-соединение.";
+                    showStatus("Нет подключения к Firebase", "error");
                 }
             });
         }
 
+        // Отображение статуса
+        function showStatus(message, type = "info") {
+            statusMessage.textContent = message;
+            statusMessage.className = type;
+            console.log(`[STATUS] ${message}`);
+        }
+
+        // Генерация ID пользователя
+        function generateUserId() {
+            return 'user-' + Date.now() + '-' + Math.random().toString(36).substr(2, 5);
+        }
+
         // Инициализация приложения
         checkFirebaseConnection();
-
-        // Обработчики событий
         joinBtn.addEventListener('click', joinRoom);
         leaveBtn.addEventListener('click', leaveRoom);
         window.addEventListener('beforeunload', leaveRoom);
@@ -144,12 +172,17 @@
         async function joinRoom() {
             const username = usernameInput.value.trim();
             if (!username) {
-                errorMsg.textContent = "Пожалуйста, введите имя";
+                showStatus("Пожалуйста, введите имя", "error");
+                return;
+            }
+
+            if (!firebaseConnected) {
+                showStatus("Ошибка: нет подключения к серверу", "error");
                 return;
             }
 
             try {
-                errorMsg.textContent = "Запрашиваем доступ к микрофону...";
+                showStatus("Запрашиваем доступ к микрофону...", "info");
                 
                 // Получаем доступ к микрофону
                 localStream = await navigator.mediaDevices.getUserMedia({ 
@@ -158,11 +191,13 @@
                         noiseSuppression: true,
                         autoGainControl: true
                     } 
+                }).catch(err => {
+                    throw new Error("Микрофон недоступен: " + err.message);
                 });
                 
                 // Создаем ID пользователя
                 currentUserId = generateUserId();
-                errorMsg.textContent = "Подключаемся к комнате...";
+                showStatus("Подключаемся к комнате...", "info");
                 
                 // Добавляем пользователя в базу данных
                 await db.ref(`rooms/${roomName}/users/${currentUserId}`).set({
@@ -171,74 +206,85 @@
                     status: 'online'
                 });
 
+                // Проверяем, что данные записались
+                const userSnapshot = await db.ref(`rooms/${roomName}/users/${currentUserId}`).once('value');
+                if (!userSnapshot.exists()) {
+                    throw new Error("Не удалось зарегистрироваться в комнате");
+                }
+
                 // Переключаем интерфейс
                 loginDiv.style.display = 'none';
                 roomDiv.style.display = 'block';
-                errorMsg.textContent = "";
+                showStatus("Вы в комнате!", "success");
+                roomStatus.textContent = "(Подключено)";
 
                 // Настраиваем слушатели
                 setupListeners();
                 
             } catch (error) {
-                console.error('Ошибка:', error);
-                errorMsg.textContent = `Ошибка входа: ${error.message}`;
+                console.error("Ошибка входа:", error);
+                showStatus("Ошибка: " + error.message, "error");
+                
+                // Очищаем ресурсы при ошибке
+                if (localStream) {
+                    localStream.getTracks().forEach(track => track.stop());
+                }
             }
-        }
-
-        // Генерация ID пользователя
-        function generateUserId() {
-            return 'user-' + Date.now() + '-' + Math.random().toString(36).substr(2, 5);
         }
 
         // Настройка слушателей Firebase
         function setupListeners() {
             // Слушаем изменения в списке пользователей
             db.ref(`rooms/${roomName}/users`).on('value', snapshot => {
-                updateUsersList(snapshot.val());
+                const users = snapshot.val() || {};
+                console.log("Обновление списка пользователей:", users);
+                updateUsersList(users);
             });
 
             // Обработка удаленных пользователей
             db.ref(`rooms/${roomName}/users`).on('child_removed', snapshot => {
                 const userId = snapshot.key;
+                console.log("Пользователь покинул комнату:", userId);
                 removePeerConnection(userId);
             });
 
             // Сигнализация WebRTC
             db.ref(`rooms/${roomName}/signals`).on('child_added', async snapshot => {
                 const signal = snapshot.val();
-                if (signal.to !== currentUserId) return;
-
-                try {
-                    snapshot.ref.remove();
-                    
-                    if (signal.type === 'offer') {
-                        await handleOffer(signal);
-                    } else if (signal.type === 'answer') {
-                        await handleAnswer(signal);
-                    } else if (signal.type === 'candidate') {
-                        await handleIceCandidate(signal);
+                console.log("Получен сигнал:", signal);
+                
+                if (signal.to === currentUserId) {
+                    try {
+                        await snapshot.ref.remove();
+                        await processSignal(signal);
+                    } catch (error) {
+                        console.error("Ошибка обработки сигнала:", error);
                     }
-                } catch (error) {
-                    console.error('Ошибка обработки сигнала:', error);
                 }
             });
         }
 
         // Обновление списка пользователей
         function updateUsersList(users) {
-            if (!users) {
-                usersList.innerHTML = '<div>Нет участников в комнате</div>';
+            usersList.innerHTML = '';
+            
+            if (!users || Object.keys(users).length === 0) {
+                usersList.innerHTML = '<div class="user">Нет участников в комнате</div>';
                 return;
             }
             
-            usersList.innerHTML = '';
+            // Сортируем пользователей по времени подключения
+            const sortedUsers = Object.entries(users).sort((a, b) => a[1].timestamp - b[1].timestamp);
             
-            Object.entries(users).forEach(([userId, userData]) => {
+            sortedUsers.forEach(([userId, userData]) => {
                 const userElement = document.createElement('div');
-                userElement.className = 'user';
+                userElement.className = `user ${userId === currentUserId ? 'user-you' : ''}`;
                 
                 const userInfo = document.createElement('div');
-                userInfo.textContent = userData.name + (userId === currentUserId ? ' (Вы)' : '');
+                userInfo.textContent = userData.name;
+                if (userId === currentUserId) {
+                    userInfo.textContent += ' (Вы)';
+                }
                 
                 const status = document.createElement('span');
                 status.className = `status ${userData.status === 'online' ? 'online' : 'offline'}`;
@@ -249,9 +295,26 @@
                 
                 // Инициируем соединение с новыми пользователями
                 if (userId !== currentUserId && !peerConnections[userId] && userData.status === 'online') {
+                    console.log("Инициирую соединение с", userId);
                     initiateConnection(userId);
                 }
             });
+        }
+
+        // Обработка сигналов WebRTC
+        async function processSignal(signal) {
+            try {
+                if (signal.type === 'offer') {
+                    await handleOffer(signal);
+                } else if (signal.type === 'answer') {
+                    await handleAnswer(signal);
+                } else if (signal.type === 'candidate') {
+                    await handleIceCandidate(signal);
+                }
+            } catch (error) {
+                console.error("Ошибка обработки сигнала:", error);
+                throw error;
+            }
         }
 
         // Инициирование соединения
@@ -259,6 +322,7 @@
             const pc = createPeerConnection(userId);
             
             try {
+                console.log("Создаю offer для", userId);
                 const offer = await pc.createOffer();
                 await pc.setLocalDescription(offer);
                 
@@ -270,12 +334,15 @@
                     timestamp: firebase.database.ServerValue.TIMESTAMP
                 });
             } catch (error) {
-                console.error('Ошибка создания предложения:', error);
+                console.error("Ошибка создания предложения:", error);
+                removePeerConnection(userId);
             }
         }
 
         // Создание PeerConnection
         function createPeerConnection(userId) {
+            console.log("Создаю PeerConnection для", userId);
+            
             const pc = new RTCPeerConnection({
                 iceServers: [
                     { urls: 'stun:stun.l.google.com:19302' },
@@ -294,12 +361,14 @@
             
             // Обработчик входящего потока
             pc.ontrack = event => {
+                console.log("Получен аудиопоток от", userId);
                 handleRemoteStream(userId, event.streams[0]);
             };
             
             // Обработчик ICE кандидатов
             pc.onicecandidate = event => {
                 if (event.candidate) {
+                    console.log("Отправляю ICE кандидат для", userId);
                     db.ref(`rooms/${roomName}/signals`).push({
                         from: currentUserId,
                         to: userId,
@@ -315,8 +384,13 @@
                 console.log(`Состояние соединения с ${userId}: ${pc.connectionState}`);
                 
                 if (pc.connectionState === 'disconnected' || pc.connectionState === 'failed') {
+                    console.log("Соединение разорвано с", userId);
                     removePeerConnection(userId);
                 }
+            };
+            
+            pc.oniceconnectionstatechange = () => {
+                console.log(`ICE состояние с ${userId}: ${pc.iceConnectionState}`);
             };
             
             return pc;
@@ -324,6 +398,7 @@
 
         // Обработка предложения соединения
         async function handleOffer(signal) {
+            console.log("Обрабатываю offer от", signal.from);
             const pc = createPeerConnection(signal.from);
             
             try {
@@ -340,48 +415,60 @@
                     timestamp: firebase.database.ServerValue.TIMESTAMP
                 });
             } catch (error) {
-                console.error('Ошибка обработки предложения:', error);
+                console.error("Ошибка обработки предложения:", error);
+                removePeerConnection(signal.from);
             }
         }
 
         // Обработка ответа
         async function handleAnswer(signal) {
+            console.log("Обрабатываю answer от", signal.from);
             const pc = peerConnections[signal.from];
+            
             if (pc) {
                 try {
                     await pc.setRemoteDescription(new RTCSessionDescription(signal.sdp));
                 } catch (error) {
-                    console.error('Ошибка обработки ответа:', error);
+                    console.error("Ошибка обработки ответа:", error);
+                    removePeerConnection(signal.from);
                 }
             }
         }
 
         // Обработка ICE кандидата
         async function handleIceCandidate(signal) {
+            console.log("Обрабатываю ICE кандидат от", signal.from);
             const pc = peerConnections[signal.from];
+            
             if (pc && signal.candidate) {
                 try {
                     await pc.addIceCandidate(new RTCIceCandidate(signal.candidate));
                 } catch (error) {
-                    console.error('Ошибка добавления ICE кандидата:', error);
+                    console.error("Ошибка добавления ICE кандидата:", error);
                 }
             }
         }
 
         // Обработка удаленного аудиопотока
         function handleRemoteStream(userId, stream) {
+            console.log("Создаю аудиоэлемент для", userId);
             let audioElement = document.getElementById(`audio-${userId}`);
+            
             if (!audioElement) {
                 audioElement = document.createElement('audio');
                 audioElement.id = `audio-${userId}`;
                 audioElement.autoplay = true;
-                document.body.appendChild(audioElement);
+                audioContainer.appendChild(audioElement);
             }
+            
             audioElement.srcObject = stream;
+            showStatus(`Установлено соединение с ${userId}`, "success");
         }
 
         // Удаление PeerConnection
         function removePeerConnection(userId) {
+            console.log("Удаляю соединение с", userId);
+            
             if (peerConnections[userId]) {
                 peerConnections[userId].close();
                 delete peerConnections[userId];
@@ -397,6 +484,9 @@
         // Выход из комнаты
         function leaveRoom() {
             if (!currentUserId) return;
+            
+            console.log("Покидаю комнату");
+            showStatus("Покидаем комнату...", "info");
             
             // Удаляем пользователя из базы данных
             db.ref(`rooms/${roomName}/users/${currentUserId}`).remove();
@@ -416,11 +506,29 @@
             roomDiv.style.display = 'none';
             usersList.innerHTML = '';
             currentUserId = null;
+            statusMessage.textContent = '';
             
             // Удаляем слушатели Firebase
             db.ref(`rooms/${roomName}/users`).off();
             db.ref(`rooms/${roomName}/signals`).off();
         }
+
+        // Отладочная информация
+        function debugConnectionInfo() {
+            setInterval(() => {
+                console.log("--- Текущие соединения ---");
+                Object.entries(peerConnections).forEach(([userId, pc]) => {
+                    console.log(`Пользователь: ${userId}`);
+                    console.log(`Состояние: ${pc.connectionState}`);
+                    console.log(`ICE состояние: ${pc.iceConnectionState}`);
+                    console.log(`Signaling состояние: ${pc.signalingState}`);
+                    console.log("---------------------");
+                });
+            }, 10000);
+        }
+
+        // Запускаем отладку
+        debugConnectionInfo();
     </script>
 </body>
 </html>
