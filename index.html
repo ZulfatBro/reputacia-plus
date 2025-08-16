@@ -1,28 +1,24 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-  <meta charset="UTF-8">
-  <title>Анонимный чат Zulfat</title>
-  <style>
-    body { font-family: Arial; background: #111; color: #fff; text-align: center; }
-    #chat { border: 1px solid #444; width: 400px; height: 300px; margin: 20px auto; padding: 10px; overflow-y: auto; background:#222; }
-    #input { width: 300px; padding:5px; }
-    #send { padding: 5px 10px; }
-    p { text-align: left; }
-  </style>
+<meta charset="UTF-8">
+<title>Голосовой чат Zulfat</title>
+<style>
+  body { font-family: Arial; background: #111; color: #fff; text-align: center; padding: 20px; }
+  button { margin: 10px; padding: 10px 20px; }
+  audio { margin-top: 20px; }
+</style>
 </head>
 <body>
-  <h1>🔥 Анонимный чат Zulfat</h1>
-  <div id="chat"></div>
-  <input id="input" type="text" placeholder="Введите сообщение">
-  <button id="send">Отправить</button>
+  <h1>🔥 Мини-Голосовой чат Zulfat</h1>
+  <button id="startCall">Найти собеседника</button>
+  <button id="endCall">Закончить звонок</button>
+  <audio id="remoteAudio" autoplay></audio>
 
-  <!-- Firebase -->
   <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-database.js"></script>
-
   <script>
-    // Конфиг Firebase
+    // === Firebase Config ===
     const firebaseConfig = {
       apiKey: "BGGMpn8F66tOHR2q8BJDwEQtpoAV-nxysmwpMyBQlPLVciyYFQm4MdeZmAyJa2oi_ByB8-Cq--fDBKcvg2OoqPc",
       authDomain: "zulfat-9615a.firebaseapp.com",
@@ -32,35 +28,75 @@
       messagingSenderId: "399179660422",
       appId: "1:399179660422:web:e7bba9be2688ac49bf2507"
     };
-
-    // Инициализация Firebase
     const app = firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
 
-    const chat = document.getElementById("chat");
-    const input = document.getElementById("input");
-    const sendBtn = document.getElementById("send");
+    const startBtn = document.getElementById('startCall');
+    const endBtn = document.getElementById('endCall');
+    const remoteAudio = document.getElementById('remoteAudio');
 
-    // Уникальное имя для юзера
-    const username = "User" + Math.floor(Math.random() * 1000);
+    let pc; // PeerConnection
+    let localStream;
+    let roomId;
 
-    // Отправка сообщений
-    sendBtn.onclick = () => {
-      const msg = input.value;
-      if (msg.trim()) {
-        db.ref("messages").push({ user: username, text: msg });
-        input.value = "";
-      }
-    };
+    async function startCall() {
+      startBtn.disabled = true;
 
-    // Получение сообщений
-    db.ref("messages").on("child_added", snapshot => {
-      const data = snapshot.val();
-      const p = document.createElement("p");
-      p.textContent = data.user + ": " + data.text;
-      chat.appendChild(p);
-      chat.scrollTop = chat.scrollHeight;
-    });
+      // Получаем микрофон
+      localStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      
+      // Создаем RTCPeerConnection
+      pc = new RTCPeerConnection();
+
+      // Добавляем аудио трек
+      localStream.getTracks().forEach(track => pc.addTrack(track, localStream));
+
+      // Когда получаем удаленный аудио поток
+      pc.ontrack = (event) => {
+        remoteAudio.srcObject = event.streams[0];
+      };
+
+      // ICE кандидаты
+      pc.onicecandidate = event => {
+        if (event.candidate) {
+          db.ref('rooms/' + roomId + '/candidates').push(event.candidate.toJSON());
+        }
+      };
+
+      // Создаем комнату
+      roomId = 'room'; // для простого примера всегда одна комната
+      const roomRef = db.ref('rooms/' + roomId);
+
+      const offer = await pc.createOffer();
+      await pc.setLocalDescription(offer);
+
+      // Сохраняем оффер в Firebase
+      await roomRef.child('offer').set(offer.toJSON());
+
+      // Ждем ответа
+      roomRef.child('answer').on('value', async snapshot => {
+        const answer = snapshot.val();
+        if (answer && !pc.currentRemoteDescription) {
+          await pc.setRemoteDescription(new RTCSessionDescription(answer));
+        }
+      });
+
+      // Ждем кандидатов собеседника
+      roomRef.child('candidates').on('child_added', snapshot => {
+        const data = snapshot.val();
+        pc.addIceCandidate(new RTCIceCandidate(data));
+      });
+    }
+
+    async function endCall() {
+      if (pc) pc.close();
+      pc = null;
+      remoteAudio.srcObject = null;
+      startBtn.disabled = false;
+    }
+
+    endBtn.onclick = endCall;
+    startBtn.onclick = startCall;
   </script>
 </body>
 </html>
