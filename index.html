@@ -4,33 +4,37 @@
 <meta charset="UTF-8">
 <title>Zulfat Voice Chat</title>
 <style>
-  body { font-family: Arial; background: #222; color: #fff; text-align: center; }
-  #login, #chat { margin-top: 50px; }
-  input { padding: 10px; font-size: 16px; }
-  button { padding: 10px; font-size: 16px; }
-  ul { list-style: none; padding: 0; }
-  li { margin: 5px 0; }
+  body { font-family: sans-serif; padding: 20px; background: #1e1e1e; color: #fff; }
+  input, button { font-size: 16px; margin: 5px; padding: 8px 12px; border-radius: 4px; border: none; }
+  button { background: #7289da; color: white; cursor: pointer; }
+  button:hover { background: #677bc4; }
+  #roomDiv { display: none; margin-top: 20px; }
+  .user-item { padding: 8px; margin: 4px 0; background: #2c2c2c; border-radius: 4px; }
+  #usersList { margin-top: 15px; }
+  audio { display: none; } /* Скрываем аудио элементы, так как они работают в фоне */
 </style>
 </head>
 <body>
 
-<div id="login">
-  <h1>Введите имя</h1>
-  <input type="text" id="username" placeholder="Имя">
-  <button id="joinBtn">Войти в комнату</button>
+<h1>Zulfat Voice Chat</h1>
+
+<div id="loginDiv">
+  <input type="text" id="username" placeholder="Введите ваше имя" autocomplete="off"/>
+  <button id="joinBtn">Войти в чат</button>
 </div>
 
-<div id="chat" style="display:none;">
-  <h1>Комната Zulfat</h1>
-  <h3>Участники:</h3>
-  <ul id="users"></ul>
-  <audio id="remoteAudio" autoplay></audio>
+<div id="roomDiv">
+  <h2>Комната: <span id="roomName">main</span></h2>
+  <div id="usersList"></div>
+  <button id="leaveBtn" style="background: #e74c3c; margin-top: 20px;">Покинуть комнату</button>
 </div>
 
-<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
+<!-- Используем более новую версию Firebase -->
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 
 <script>
+// Конфигурация Firebase (замените на свою!)
 const firebaseConfig = {
   apiKey: "BGGMpn8F66tOHR2q8BJDwEQtpoAV-nxysmwpMyBQlPLVciyYFQm4MdeZmAyJa2oi_ByB8-Cq--fDBKcvg2OoqPc",
   authDomain: "zulfat-9615a.firebaseapp.com",
@@ -40,82 +44,265 @@ const firebaseConfig = {
   messagingSenderId: "399179660422",
   appId: "1:399179660422:web:e7bba9be2688ac49bf2507"
 };
+
+// Инициализация Firebase
 firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
 
+// DOM элементы
+const loginDiv = document.getElementById("loginDiv");
+const roomDiv = document.getElementById("roomDiv");
 const joinBtn = document.getElementById("joinBtn");
+const leaveBtn = document.getElementById("leaveBtn");
 const usernameInput = document.getElementById("username");
-const loginDiv = document.getElementById("login");
-const chatDiv = document.getElementById("chat");
-const usersList = document.getElementById("users");
-const remoteAudio = document.getElementById("remoteAudio");
+const usersListDiv = document.getElementById("usersList");
 
-let localStream;
-let peers = {};
-let username;
+// Глобальные переменные
+let username, localStream;
+let pcs = {}; // Все PeerConnection
+let myId; // ID текущего пользователя
+const ROOM = "main"; // Название комнаты
 
+// Обработчик входа в чат
 joinBtn.onclick = async () => {
   username = usernameInput.value.trim();
-  if(!username) return alert("Введите имя!");
-  loginDiv.style.display = "none";
-  chatDiv.style.display = "block";
-
-  // получаем микрофон
-  localStream = await navigator.mediaDevices.getUserMedia({audio:true});
+  if(!username) return alert("Пожалуйста, введите имя");
   
-  // добавляем себя в базу участников
-  const userRef = db.ref("room/users/" + username);
-  userRef.set(true);
-  userRef.onDisconnect().remove();
-
-  // слушаем список пользователей
-  db.ref("room/users").on("value", snapshot => {
-    usersList.innerHTML = "";
-    snapshot.forEach(s => {
-      const li = document.createElement("li");
-      li.textContent = s.key + (s.key === username ? " (Вы)" : "");
-      usersList.appendChild(li);
+  try {
+    // Запрашиваем доступ к микрофону
+    localStream = await navigator.mediaDevices.getUserMedia({ 
+      audio: {
+        echoCancellation: true,
+        noiseSuppression: true,
+        autoGainControl: true
+      } 
     });
-  });
-
-  // создаем peer connection для каждого нового пользователя
-  db.ref("room/offers").on("child_added", async snap => {
-    const data = snap.val();
-    if(data.to !== username) return;
-    const pc = new RTCPeerConnection();
-    peers[data.from] = pc;
-    localStream.getTracks().forEach(track => pc.addTrack(track, localStream));
-    pc.ontrack = e => { remoteAudio.srcObject = e.streams[0]; };
-
-    await pc.setRemoteDescription(new RTCSessionDescription(data.offer));
-    const answer = await pc.createAnswer();
-    await pc.setLocalDescription(answer);
-    db.ref("room/answers/" + data.from + "_" + username).set({answer: answer});
-  });
-
-  db.ref("room/answers").on("child_added", async snap => {
-    const key = snap.key;
-    const [from, to] = key.split("_");
-    if(to !== username) return;
-    const pc = peers[from];
-    if(!pc) return;
-    await pc.setRemoteDescription(new RTCSessionDescription(snap.val().answer));
-  });
-
-  // инициируем соединение с уже подключенными
-  db.ref("room/users").once("value").then(snapshot => {
-    snapshot.forEach(async s => {
-      if(s.key === username) return;
-      const pc = new RTCPeerConnection();
-      peers[s.key] = pc;
-      localStream.getTracks().forEach(track => pc.addTrack(track, localStream));
-      pc.ontrack = e => { remoteAudio.srcObject = e.streams[0]; };
-      const offer = await pc.createOffer();
-      await pc.setLocalDescription(offer);
-      db.ref("room/offers").push({from: username, to: s.key, offer: offer});
+    
+    // Переключаем видимость блоков
+    loginDiv.style.display = "none";
+    roomDiv.style.display = "block";
+    
+    // Генерируем уникальный ID (используем timestamp)
+    myId = generateId();
+    
+    // Ссылки на данные в Firebase
+    const usersRef = db.ref("rooms/" + ROOM + "/users");
+    const signalsRef = db.ref("rooms/" + ROOM + "/signals");
+    
+    // Добавляем себя в список пользователей
+    await usersRef.child(myId).set({ 
+      name: username,
+      timestamp: firebase.database.ServerValue.TIMESTAMP
     });
-  });
+    
+    // Обработчик выхода из комнаты
+    leaveBtn.onclick = () => {
+      leaveRoom(usersRef);
+    };
+    
+    // Удаляем себя при закрытии вкладки
+    window.addEventListener("beforeunload", () => {
+      leaveRoom(usersRef);
+    });
+    
+    // Слушаем изменения в списке пользователей
+    usersRef.on("value", snap => {
+      updateUsersList(snap, usersRef);
+    });
+    
+    // Слушаем удаленных пользователей
+    usersRef.on("child_removed", snap => {
+      const userId = snap.key;
+      removeUserConnection(userId);
+    });
+    
+    // Обработка сигналов WebRTC
+    signalsRef.on("child_added", async snap => {
+      const data = snap.val();
+      if(data.to === myId) {
+        await processSignal(data, signalsRef, snap);
+      }
+    });
+    
+  } catch (err) {
+    console.error("Ошибка:", err);
+    alert("Не удалось получить доступ к микрофону: " + err.message);
+  }
 };
+
+// Генерация ID пользователя
+function generateId() {
+  return 'user-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9);
+}
+
+// Выход из комнаты
+function leaveRoom(usersRef) {
+  if (myId) {
+    usersRef.child(myId).remove();
+    // Закрываем все соединения
+    Object.keys(pcs).forEach(id => {
+      pcs[id].close();
+    });
+    pcs = {};
+    // Останавливаем локальный поток
+    if (localStream) {
+      localStream.getTracks().forEach(track => track.stop());
+    }
+  }
+  // Возвращаем на экран входа
+  loginDiv.style.display = "block";
+  roomDiv.style.display = "none";
+}
+
+// Обновление списка пользователей
+function updateUsersList(snap, usersRef) {
+  usersListDiv.innerHTML = "";
+  const users = snap.val() || {};
+  
+  // Сортируем пользователей по времени подключения
+  const sortedUsers = Object.entries(users)
+    .sort((a, b) => a[1].timestamp - b[1].timestamp);
+  
+  sortedUsers.forEach(([key, user]) => {
+    const userElement = document.createElement("div");
+    userElement.className = "user-item";
+    userElement.textContent = user.name + (key === myId ? " (Вы)" : "");
+    usersListDiv.appendChild(userElement);
+    
+    // Инициируем соединение с новыми пользователями
+    if(key !== myId && !pcs[key] && key > myId) {
+      createOffer(key, usersRef);
+    }
+  });
+}
+
+// Удаление соединения с пользователем
+function removeUserConnection(userId) {
+  if (pcs[userId]) {
+    pcs[userId].close();
+    delete pcs[userId];
+  }
+  const audioElem = document.getElementById("audio_" + userId);
+  if (audioElem) {
+    audioElem.srcObject = null;
+    audioElem.remove();
+  }
+}
+
+// Обработка сигналов WebRTC
+async function processSignal(data, signalsRef, snap) {
+  try {
+    // Удаляем обработанный сигнал
+    snap.ref.remove();
+    
+    if(data.type === "offer") {
+      const pc = createPeerConnection(data.from);
+      await pc.setRemoteDescription(new RTCSessionDescription(data.sdp));
+      const answer = await pc.createAnswer();
+      await pc.setLocalDescription(answer);
+      signalsRef.push({ 
+        from: myId, 
+        to: data.from, 
+        type: "answer", 
+        sdp: answer 
+      });
+    } 
+    else if(data.type === "answer") {
+      const pc = pcs[data.from];
+      if (pc) {
+        await pc.setRemoteDescription(new RTCSessionDescription(data.sdp));
+      }
+    } 
+    else if(data.type === "candidate") {
+      const pc = pcs[data.from];
+      if (pc && data.candidate) {
+        await pc.addIceCandidate(new RTCIceCandidate(data.candidate));
+      }
+    }
+  } catch (err) {
+    console.error("Ошибка обработки сигнала:", err);
+  }
+}
+
+// Создание PeerConnection
+function createPeerConnection(peerId) {
+  const pc = new RTCPeerConnection({
+    iceServers: [
+      { urls: "stun:stun.l.google.com:19302" },
+      { urls: "stun:stun1.l.google.com:19302" },
+      { urls: "stun:stun2.l.google.com:19302" }
+    ]
+  });
+  
+  pcs[peerId] = pc;
+
+  // Добавляем локальный поток
+  localStream.getTracks().forEach(track => {
+    pc.addTrack(track, localStream);
+  });
+
+  // Обработчик входящего потока
+  pc.ontrack = event => {
+    const audioId = "audio_" + peerId;
+    let audio = document.getElementById(audioId);
+    
+    if (!audio) {
+      audio = document.createElement("audio");
+      audio.id = audioId;
+      audio.autoplay = true;
+      document.body.appendChild(audio);
+    }
+    
+    audio.srcObject = event.streams[0];
+  };
+
+  // Обработчик ICE кандидатов
+  pc.onicecandidate = event => {
+    if (event.candidate) {
+      db.ref("rooms/" + ROOM + "/signals").push({
+        from: myId,
+        to: peerId,
+        type: "candidate",
+        candidate: event.candidate
+      });
+    }
+  };
+
+  // Обработчик закрытия соединения
+  pc.onconnectionstatechange = () => {
+    if (pc.connectionState === "disconnected" || 
+        pc.connectionState === "failed") {
+      removeUserConnection(peerId);
+    }
+  };
+
+  return pc;
+}
+
+// Создание предложения соединения
+async function createOffer(peerId, usersRef) {
+  try {
+    const pc = createPeerConnection(peerId);
+    const offer = await pc.createOffer({
+      offerToReceiveAudio: true
+    });
+    
+    await pc.setLocalDescription(offer);
+    
+    usersRef.child(peerId).once("value", async (snap) => {
+      if (snap.exists()) {
+        await db.ref("rooms/" + ROOM + "/signals").push({
+          from: myId,
+          to: peerId,
+          type: "offer",
+          sdp: offer
+        });
+      }
+    });
+  } catch (err) {
+    console.error("Ошибка создания offer:", err);
+  }
+}
 </script>
 </body>
 </html>
