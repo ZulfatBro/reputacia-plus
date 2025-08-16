@@ -3,17 +3,32 @@
 <head>
 <meta charset="UTF-8">
 <title>Zulfat Voice Chat</title>
+<style>
+  body { font-family: sans-serif; padding: 20px; background: #1e1e1e; color: #fff; }
+  input, button { font-size: 16px; margin: 5px; padding: 5px; }
+  #roomDiv, #chatDiv { display: none; margin-top: 20px; }
+  audio { display: block; margin: 5px 0; }
+</style>
 </head>
 <body>
+
 <h1>Zulfat Voice Chat</h1>
-<button id="start">Начать чат</button>
-<audio id="remoteAudio" autoplay></audio>
+
+<div id="loginDiv">
+  <input type="text" id="username" placeholder="Ваше имя"/>
+  <input type="text" id="room" placeholder="Название комнаты"/>
+  <button id="joinBtn">Войти</button>
+</div>
+
+<div id="roomDiv">
+  <h2>Комната: <span id="roomName"></span></h2>
+  <div id="usersList"></div>
+</div>
 
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 
 <script>
-  // === Firebase config ===
   const firebaseConfig = {
     apiKey: "BGGMpn8F66tOHR2q8BJDwEQtpoAV-nxysmwpMyBQlPLVciyYFQm4MdeZmAyJa2oi_ByB8-Cq--fDBKcvg2OoqPc",
     authDomain: "zulfat-9615a.firebaseapp.com",
@@ -26,63 +41,105 @@
   firebase.initializeApp(firebaseConfig);
   const db = firebase.database();
 
-  const startButton = document.getElementById("start");
-  const remoteAudio = document.getElementById("remoteAudio");
+  const loginDiv = document.getElementById("loginDiv");
+  const roomDiv = document.getElementById("roomDiv");
+  const joinBtn = document.getElementById("joinBtn");
+  const usernameInput = document.getElementById("username");
+  const roomInput = document.getElementById("room");
+  const roomNameSpan = document.getElementById("roomName");
+  const usersListDiv = document.getElementById("usersList");
 
-  let pc, localStream;
-  const roomId = "zulfatRoom"; // Можно менять для разных комнат
-  const roomRef = db.ref("rooms/" + roomId);
+  let username, roomId, localStream;
+  let pcs = {}; // Все PeerConnections
 
-  startButton.onclick = async () => {
-    startButton.disabled = true;
+  joinBtn.onclick = async () => {
+    username = usernameInput.value.trim();
+    roomId = roomInput.value.trim();
+    if(!username || !roomId) return alert("Введите имя и комнату");
+
+    loginDiv.style.display = "none";
+    roomDiv.style.display = "block";
+    roomNameSpan.textContent = roomId;
 
     localStream = await navigator.mediaDevices.getUserMedia({ audio: true });
-    pc = new RTCPeerConnection({
+
+    const roomRef = db.ref("rooms/" + roomId + "/users");
+    const myRef = roomRef.push({ name: username });
+
+    // Слушаем список пользователей
+    roomRef.on("value", snap => {
+      usersListDiv.innerHTML = "";
+      const users = snap.val();
+      for (let key in users) {
+        usersListDiv.innerHTML += `<div>${users[key].name}</div>`;
+      }
+    });
+
+    // Сигнализация
+    const signalsRef = db.ref("rooms/" + roomId + "/signals");
+
+    // Слушаем сигналы
+    signalsRef.on("child_added", async snap => {
+      const data = snap.val();
+      if(data.to === myRef.key) {
+        if(data.type === "offer") {
+          const pc = createPeerConnection(data.from);
+          await pc.setRemoteDescription(new RTCSessionDescription(data.sdp));
+          const answer = await pc.createAnswer();
+          await pc.setLocalDescription(answer);
+          signalsRef.push({ from: myRef.key, to: data.from, type: "answer", sdp: answer });
+        } else if(data.type === "answer") {
+          const pc = pcs[data.from];
+          await pc.setRemoteDescription(new RTCSessionDescription(data.sdp));
+        } else if(data.type === "candidate") {
+          const pc = pcs[data.from];
+          await pc.addIceCandidate(new RTCIceCandidate(data.candidate));
+        }
+      }
+    });
+
+    // Создаём офферы для существующих пользователей
+    roomRef.once("value", snap => {
+      const users = snap.val();
+      for (let key in users) {
+        if(key !== myRef.key) createOffer(key);
+      }
+    });
+  };
+
+  function createPeerConnection(peerId) {
+    const pc = new RTCPeerConnection({
       iceServers: [{ urls: "stun:stun.l.google.com:19302" }]
     });
+    pcs[peerId] = pc;
+
     localStream.getTracks().forEach(track => pc.addTrack(track, localStream));
 
     pc.ontrack = event => {
-      remoteAudio.srcObject = event.streams[0];
+      if(!document.getElementById("audio_" + peerId)) {
+        const audio = document.createElement("audio");
+        audio.id = "audio_" + peerId;
+        audio.autoplay = true;
+        audio.srcObject = event.streams[0];
+        roomDiv.appendChild(audio);
+      }
     };
 
     pc.onicecandidate = event => {
-      if (event.candidate) {
-        roomRef.child("candidates").push(JSON.stringify(event.candidate));
+      if(event.candidate) {
+        db.ref("rooms/" + roomId + "/signals").push({ from: myRef.key, to: peerId, type: "candidate", candidate: event.candidate });
       }
     };
 
-    // Слушаем входящие сигналы
-    roomRef.child("offer").once("value", async snap => {
-      const offer = snap.val();
-      if (!offer) {
-        // Я создаю оффер
-        const offerDesc = await pc.createOffer();
-        await pc.setLocalDescription(offerDesc);
-        roomRef.child("offer").set(JSON.stringify(offerDesc));
+    return pc;
+  }
 
-        // Жду answer
-        roomRef.child("answer").on("value", async snap => {
-          const answer = snap.val();
-          if (answer) {
-            await pc.setRemoteDescription(JSON.parse(answer));
-          }
-        });
-      } else {
-        // Я принимаю оффер
-        await pc.setRemoteDescription(JSON.parse(offer));
-        const answerDesc = await pc.createAnswer();
-        await pc.setLocalDescription(answerDesc);
-        roomRef.child("answer").set(JSON.stringify(answerDesc));
-      }
-    });
-
-    // Слушаем кандидатов
-    roomRef.child("candidates").on("child_added", snap => {
-      const candidate = JSON.parse(snap.val());
-      pc.addIceCandidate(new RTCIceCandidate(candidate));
-    });
-  };
+  async function createOffer(peerId) {
+    const pc = createPeerConnection(peerId);
+    const offer = await pc.createOffer();
+    await pc.setLocalDescription(offer);
+    db.ref("rooms/" + roomId + "/signals").push({ from: myRef.key, to: peerId, type: "offer", sdp: offer });
+  }
 </script>
 </body>
 </html>
