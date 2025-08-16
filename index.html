@@ -1,119 +1,66 @@
 <!DOCTYPE html>
-<html>
+<html lang="ru">
 <head>
-<meta charset="UTF-8">
-<title>P2P Звонки через Интернет</title>
-<style>
-body {
-    background: #0f0f1a;
-    color: white;
-    font-family: sans-serif;
-    text-align: center;
-    padding: 20px;
-}
-textarea {
-    width: 90%;
-    height: 120px;
-    background: #1a1a2e;
-    color: #00e5ff;
-    border: none;
-    padding: 10px;
-    margin-top: 10px;
-    resize: none;
-}
-button {
-    background: #6200ea;
-    color: white;
-    padding: 10px 20px;
-    border: none;
-    margin-top: 10px;
-    cursor: pointer;
-}
-button:hover {
-    background: #3700b3;
-}
-</style>
+  <meta charset="UTF-8">
+  <title>Анонимный чат Zulfat</title>
+  <style>
+    body { font-family: Arial; background: #111; color: #fff; text-align: center; }
+    #chat { border: 1px solid #444; width: 400px; height: 300px; margin: 20px auto; padding: 10px; overflow-y: auto; background:#222; }
+    #input { width: 300px; padding:5px; }
+    #send { padding: 5px 10px; }
+    p { text-align: left; }
+  </style>
 </head>
 <body>
+  <h1>🔥 Анонимный чат Zulfat</h1>
+  <div id="chat"></div>
+  <input id="input" type="text" placeholder="Введите сообщение">
+  <button id="send">Отправить</button>
 
-<h1>Прямой P2P звонок через интернет</h1>
-<p>Шаг 1: Один человек создаёт звонок → копирует код и отправляет другу.<br>
-Шаг 2: Друг вставляет код → создаёт ответ и отправляет обратно.<br>
-Шаг 3: Первый вставляет ответ → звонок соединён.</p>
+  <!-- Firebase -->
+  <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-database.js"></script>
 
-<button onclick="createOffer()">Создать звонок</button><br>
-<textarea id="offer" placeholder="Здесь будет код приглашения"></textarea><br>
+  <script>
+    // Конфиг Firebase
+    const firebaseConfig = {
+      apiKey: "BGGMpn8F66tOHR2q8BJDwEQtpoAV-nxysmwpMyBQlPLVciyYFQm4MdeZmAyJa2oi_ByB8-Cq--fDBKcvg2OoqPc",
+      authDomain: "zulfat-9615a.firebaseapp.com",
+      databaseURL: "https://zulfat-9615a-default-rtdb.firebaseio.com",
+      projectId: "zulfat-9615a",
+      storageBucket: "zulfat-9615a.appspot.com",
+      messagingSenderId: "399179660422",
+      appId: "1:399179660422:web:e7bba9be2688ac49bf2507"
+    };
 
-<button onclick="createAnswer()">Ответить на звонок</button><br>
-<textarea id="answer" placeholder="Вставьте сюда код, который прислали"></textarea><br>
+    // Инициализация Firebase
+    const app = firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
 
-<button onclick="applyAnswer()">Применить ответ</button>
+    const chat = document.getElementById("chat");
+    const input = document.getElementById("input");
+    const sendBtn = document.getElementById("send");
 
-<script>
-let pc = new RTCPeerConnection({
-    iceServers: [{ urls: 'stun:stun.l.google.com:19302' }]
-});
-let localStream;
-let remoteAudio = document.createElement('audio');
-remoteAudio.autoplay = true;
-document.body.appendChild(remoteAudio);
+    // Уникальное имя для юзера
+    const username = "User" + Math.floor(Math.random() * 1000);
 
-// Получаем микрофон
-navigator.mediaDevices.getUserMedia({ audio: true }).then(stream => {
-    localStream = stream;
-    stream.getTracks().forEach(track => pc.addTrack(track, stream));
-}).catch(err => alert("Не удалось получить микрофон: " + err));
+    // Отправка сообщений
+    sendBtn.onclick = () => {
+      const msg = input.value;
+      if (msg.trim()) {
+        db.ref("messages").push({ user: username, text: msg });
+        input.value = "";
+      }
+    };
 
-// Когда приходят треки от друга
-pc.ontrack = event => {
-    remoteAudio.srcObject = event.streams[0];
-};
-
-// Когда собираются ICE-кандидаты
-pc.onicecandidate = event => {
-    if (!event.candidate) { // только когда кандидаты собраны
-        if (pc.localDescription) {
-            document.getElementById("offer").value = btoa(JSON.stringify(pc.localDescription));
-        }
-    }
-};
-
-// Создать звонок
-async function createOffer() {
-    let offer = await pc.createOffer();
-    await pc.setLocalDescription(offer);
-    alert("Код приглашения готов. Отправьте его другу.");
-}
-
-// Ответить на звонок
-async function createAnswer() {
-    try {
-        let offerCode = document.getElementById("answer").value.trim();
-        if (!offerCode) return alert("Вставьте код приглашения.");
-        let offer = JSON.parse(atob(offerCode));
-        await pc.setRemoteDescription(offer);
-        let answer = await pc.createAnswer();
-        await pc.setLocalDescription(answer);
-        document.getElementById("offer").value = btoa(JSON.stringify(answer));
-        alert("Ответ создан. Отправьте его обратно первому.");
-    } catch (err) {
-        alert("Ошибка при создании ответа: " + err);
-    }
-}
-
-// Применить ответ
-async function applyAnswer() {
-    try {
-        let answerCode = document.getElementById("answer").value.trim();
-        if (!answerCode) return alert("Вставьте код ответа.");
-        let answer = JSON.parse(atob(answerCode));
-        await pc.setRemoteDescription(answer);
-        alert("Соединение установлено! Можете разговаривать.");
-    } catch (err) {
-        alert("Ошибка при применении ответа: " + err);
-    }
-}
-</script>
-
+    // Получение сообщений
+    db.ref("messages").on("child_added", snapshot => {
+      const data = snapshot.val();
+      const p = document.createElement("p");
+      p.textContent = data.user + ": " + data.text;
+      chat.appendChild(p);
+      chat.scrollTop = chat.scrollHeight;
+    });
+  </script>
 </body>
 </html>
