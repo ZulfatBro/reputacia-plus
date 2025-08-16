@@ -2,101 +2,87 @@
 <html lang="ru">
 <head>
 <meta charset="UTF-8">
-<title>Голосовой чат Zulfat</title>
-<style>
-  body { font-family: Arial; background: #111; color: #fff; text-align: center; padding: 20px; }
-  button { margin: 10px; padding: 10px 20px; }
-  audio { margin-top: 20px; }
-</style>
+<title>Zulfat Voice Chat</title>
 </head>
 <body>
-  <h1>🔥 Мини-Голосовой чат Zulfat</h1>
-  <button id="startCall">Найти собеседника</button>
-  <button id="endCall">Закончить звонок</button>
-  <audio id="remoteAudio" autoplay></audio>
+<h1>Zulfat Voice Chat</h1>
+<button id="start">Начать чат</button>
+<audio id="remoteAudio" autoplay></audio>
 
-  <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-database.js"></script>
-  <script>
-    // === Firebase Config ===
-    const firebaseConfig = {
-      apiKey: "BGGMpn8F66tOHR2q8BJDwEQtpoAV-nxysmwpMyBQlPLVciyYFQm4MdeZmAyJa2oi_ByB8-Cq--fDBKcvg2OoqPc",
-      authDomain: "zulfat-9615a.firebaseapp.com",
-      databaseURL: "https://zulfat-9615a-default-rtdb.firebaseio.com",
-      projectId: "zulfat-9615a",
-      storageBucket: "zulfat-9615a.appspot.com",
-      messagingSenderId: "399179660422",
-      appId: "1:399179660422:web:e7bba9be2688ac49bf2507"
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+
+<script>
+  // === Firebase config ===
+  const firebaseConfig = {
+    apiKey: "BGGMpn8F66tOHR2q8BJDwEQtpoAV-nxysmwpMyBQlPLVciyYFQm4MdeZmAyJa2oi_ByB8-Cq--fDBKcvg2OoqPc",
+    authDomain: "zulfat-9615a.firebaseapp.com",
+    databaseURL: "https://zulfat-9615a-default-rtdb.firebaseio.com",
+    projectId: "zulfat-9615a",
+    storageBucket: "zulfat-9615a.appspot.com",
+    messagingSenderId: "399179660422",
+    appId: "1:399179660422:web:e7bba9be2688ac49bf2507"
+  };
+  firebase.initializeApp(firebaseConfig);
+  const db = firebase.database();
+
+  const startButton = document.getElementById("start");
+  const remoteAudio = document.getElementById("remoteAudio");
+
+  let pc, localStream;
+  const roomId = "zulfatRoom"; // Можно менять для разных комнат
+  const roomRef = db.ref("rooms/" + roomId);
+
+  startButton.onclick = async () => {
+    startButton.disabled = true;
+
+    localStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    pc = new RTCPeerConnection({
+      iceServers: [{ urls: "stun:stun.l.google.com:19302" }]
+    });
+    localStream.getTracks().forEach(track => pc.addTrack(track, localStream));
+
+    pc.ontrack = event => {
+      remoteAudio.srcObject = event.streams[0];
     };
-    const app = firebase.initializeApp(firebaseConfig);
-    const db = firebase.database();
 
-    const startBtn = document.getElementById('startCall');
-    const endBtn = document.getElementById('endCall');
-    const remoteAudio = document.getElementById('remoteAudio');
+    pc.onicecandidate = event => {
+      if (event.candidate) {
+        roomRef.child("candidates").push(JSON.stringify(event.candidate));
+      }
+    };
 
-    let pc; // PeerConnection
-    let localStream;
-    let roomId;
+    // Слушаем входящие сигналы
+    roomRef.child("offer").once("value", async snap => {
+      const offer = snap.val();
+      if (!offer) {
+        // Я создаю оффер
+        const offerDesc = await pc.createOffer();
+        await pc.setLocalDescription(offerDesc);
+        roomRef.child("offer").set(JSON.stringify(offerDesc));
 
-    async function startCall() {
-      startBtn.disabled = true;
+        // Жду answer
+        roomRef.child("answer").on("value", async snap => {
+          const answer = snap.val();
+          if (answer) {
+            await pc.setRemoteDescription(JSON.parse(answer));
+          }
+        });
+      } else {
+        // Я принимаю оффер
+        await pc.setRemoteDescription(JSON.parse(offer));
+        const answerDesc = await pc.createAnswer();
+        await pc.setLocalDescription(answerDesc);
+        roomRef.child("answer").set(JSON.stringify(answerDesc));
+      }
+    });
 
-      // Получаем микрофон
-      localStream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      
-      // Создаем RTCPeerConnection
-      pc = new RTCPeerConnection();
-
-      // Добавляем аудио трек
-      localStream.getTracks().forEach(track => pc.addTrack(track, localStream));
-
-      // Когда получаем удаленный аудио поток
-      pc.ontrack = (event) => {
-        remoteAudio.srcObject = event.streams[0];
-      };
-
-      // ICE кандидаты
-      pc.onicecandidate = event => {
-        if (event.candidate) {
-          db.ref('rooms/' + roomId + '/candidates').push(event.candidate.toJSON());
-        }
-      };
-
-      // Создаем комнату
-      roomId = 'room'; // для простого примера всегда одна комната
-      const roomRef = db.ref('rooms/' + roomId);
-
-      const offer = await pc.createOffer();
-      await pc.setLocalDescription(offer);
-
-      // Сохраняем оффер в Firebase
-      await roomRef.child('offer').set(offer.toJSON());
-
-      // Ждем ответа
-      roomRef.child('answer').on('value', async snapshot => {
-        const answer = snapshot.val();
-        if (answer && !pc.currentRemoteDescription) {
-          await pc.setRemoteDescription(new RTCSessionDescription(answer));
-        }
-      });
-
-      // Ждем кандидатов собеседника
-      roomRef.child('candidates').on('child_added', snapshot => {
-        const data = snapshot.val();
-        pc.addIceCandidate(new RTCIceCandidate(data));
-      });
-    }
-
-    async function endCall() {
-      if (pc) pc.close();
-      pc = null;
-      remoteAudio.srcObject = null;
-      startBtn.disabled = false;
-    }
-
-    endBtn.onclick = endCall;
-    startBtn.onclick = startCall;
-  </script>
+    // Слушаем кандидатов
+    roomRef.child("candidates").on("child_added", snap => {
+      const candidate = JSON.parse(snap.val());
+      pc.addIceCandidate(new RTCIceCandidate(candidate));
+    });
+  };
+</script>
 </body>
 </html>
