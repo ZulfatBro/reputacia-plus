@@ -86,7 +86,7 @@ let userList = document.getElementById('userList');
 document.getElementById('joinBtn').onclick = async () => {
   if (!nicknameInput.value) return alert('Введите никнейм!');
   
-  ws = new WebSocket('ws://'+location.hostname+':8080');
+  ws = new WebSocket('ws://'151.115.98.198':8080');
   ws.onopen = () => console.log('Подключено к серверу');
   
   ws.onmessage = async event => {
