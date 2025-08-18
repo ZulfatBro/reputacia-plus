@@ -1,85 +1,234 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <meta charset="utf-8">
-  <title>Простой звонок WebRTC</title>
+  <meta charset="utf-8" />
+  <title>Простой P2P-звонок (ручной обмен JSON)</title>
+  <style>
+    body { font-family: Arial, sans-serif; max-width: 900px; margin: 20px auto; }
+    textarea { width:100%; height:120px; }
+    button { margin:6px 0; padding:8px 12px; }
+    .row { margin-bottom:12px; }
+    audio { display:block; margin-top:8px; }
+    .hint { color:#666; font-size:0.9em; }
+  </style>
 </head>
 <body>
-  <h2>Звонок другу (P2P WebRTC)</h2>
+  <h2>Простой P2P-звонок (WebRTC, ручной обмен JSON)</h2>
+  <div class="hint">Внимание: открывать страницу нужно по HTTPS (или localhost). Для надёжной связи в сложных NAT требуется TURN-сервер.</div>
 
-  <button id="startBtn">Создать звонок</button><br><br>
+  <div class="row">
+    <button id="startMic">Включить микрофон</button>
+    <span id="micStatus" class="hint"></span>
+  </div>
 
-  <textarea id="offer" placeholder="Тут будет Offer..." style="width:100%;height:100px"></textarea><br>
-  <button id="copyOffer">Скопировать Offer</button><br><br>
+  <hr>
 
-  <textarea id="answer" placeholder="Вставьте сюда Answer друга..." style="width:100%;height:100px"></textarea><br>
-  <button id="setAnswer">Установить Answer</button><br><br>
+  <h3>1) Тот, кто звонит — Создать Offer</h3>
+  <div class="row">
+    <button id="createOffer">Создать Offer (ждать несколько сек)</button>
+    <button id="copyOffer">Скопировать Offer</button>
+  </div>
+  <textarea id="offerOut" placeholder="Здесь появится Offer JSON (скопируй и отправь другу)"></textarea>
 
-  <button id="answerBtn">Ответить на звонок</button><br><br>
-  <textarea id="remoteOffer" placeholder="Вставьте сюда Offer друга..." style="width:100%;height:100px"></textarea><br>
-  <button id="createAnswer">Создать Answer</button><br><br>
-  <textarea id="myAnswer" placeholder="Скопируйте этот Answer другу..." style="width:100%;height:100px"></textarea><br>
+  <hr>
 
-  <script>
-    let pc = new RTCPeerConnection();
-    let localStream;
+  <h3>2) Тот, кто отвечает — Вставить Offer и создать Answer</h3>
+  <div class="row">
+    <textarea id="offerIn" placeholder="Вставь сюда Offer, который прислал звонящий"></textarea>
+    <button id="acceptOffer">Принять Offer и создать Answer</button>
+    <button id="copyAnswer">Скопировать Answer</button>
+  </div>
+  <textarea id="answerOut" placeholder="Здесь появится Answer JSON (скопируй и отправь звонящему)"></textarea>
 
-    // Включаем микрофон
-    navigator.mediaDevices.getUserMedia({ audio: true }).then(stream => {
-      localStream = stream;
-      stream.getTracks().forEach(track => pc.addTrack(track, stream));
-    });
+  <hr>
 
-    // Воспроизводим звук друга
-    pc.ontrack = e => {
-      let audio = document.createElement("audio");
-      audio.srcObject = e.streams[0];
+  <h3>3) Звонящий — вставить Answer</h3>
+  <div class="row">
+    <textarea id="answerIn" placeholder="Вставь сюда Answer от друга и нажми 'Установить Answer'"></textarea>
+    <button id="setAnswerBtn">Установить Answer</button>
+  </div>
+
+  <hr>
+  <div id="remoteAudioHolder"></div>
+
+<script>
+(async () => {
+  // Конфигурация с STUN (можно добавить TURN при наличии)
+  const pcConfig = {
+    iceServers: [
+      { urls: ["stun:stun.l.google.com:19302", "stun:stun1.l.google.com:19302"] },
+      { urls: ["stun:stun.services.mozilla.com"] }
+    ]
+  };
+
+  let pc = null;
+  let localStream = null;
+  let localCandidates = [];
+  let remoteAudioHolder = document.getElementById('remoteAudioHolder');
+
+  function createPeerConnection() {
+    pc = new RTCPeerConnection(pcConfig);
+    localCandidates = [];
+
+    pc.ontrack = (e) => {
+      // Показываем аудио-плеер для входящего потока
+      remoteAudioHolder.innerHTML = "";
+      const audio = document.createElement('audio');
       audio.autoplay = true;
-      document.body.appendChild(audio);
+      audio.controls = true;
+      audio.srcObject = e.streams[0];
+      remoteAudioHolder.appendChild(document.createTextNode('Получаем аудио:'));
+      remoteAudioHolder.appendChild(audio);
     };
 
-    // --- Кандидаты ICE (нужны для соединения через интернет) ---
-    let pendingCandidates = [];
-    pc.onicecandidate = event => {
-      if (event.candidate) {
-        pendingCandidates.push(event.candidate);
-      } else {
-        // Когда кандидаты собраны, обновляем описание
-        if (pc.localDescription.type === "offer") {
-          document.getElementById("offer").value = JSON.stringify(pc.localDescription);
-        } else if (pc.localDescription.type === "answer") {
-          document.getElementById("myAnswer").value = JSON.stringify(pc.localDescription);
-        }
+    pc.onicecandidate = (e) => {
+      if (e.candidate) {
+        // сохраняем сериализуемый кандидат
+        localCandidates.push(e.candidate.toJSON());
       }
     };
 
-    // Создать звонок (Offer)
-    document.getElementById("startBtn").onclick = async () => {
-      let offer = await pc.createOffer();
+    return pc;
+  }
+
+  async function ensureMic() {
+    if (!localStream) {
+      try {
+        localStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        document.getElementById('micStatus').textContent = "Микрофон включён";
+      } catch (err) {
+        alert("Не удалось получить микрофон: " + err.message);
+        throw err;
+      }
+    }
+  }
+
+  async function addLocalTracks(pc) {
+    if (!localStream) return;
+    for (const track of localStream.getTracks()) pc.addTrack(track, localStream);
+  }
+
+  function waitForIceGatheringComplete(pc, timeout = 7000) {
+    return new Promise(resolve => {
+      if (pc.iceGatheringState === 'complete') return resolve();
+      function check() {
+        if (pc.iceGatheringState === 'complete') {
+          pc.removeEventListener('icegatheringstatechange', check);
+          resolve();
+        }
+      }
+      pc.addEventListener('icegatheringstatechange', check);
+      // fallback timeout
+      setTimeout(() => {
+        pc.removeEventListener('icegatheringstatechange', check);
+        resolve();
+      }, timeout);
+    });
+  }
+
+  // Создать Offer
+  document.getElementById('createOffer').onclick = async () => {
+    try {
+      await ensureMic();
+      createPeerConnection();
+      await addLocalTracks(pc);
+
+      const offer = await pc.createOffer();
       await pc.setLocalDescription(offer);
-      // Текст появится после сбора ICE
-    };
 
-    // Скопировать Offer
-    document.getElementById("copyOffer").onclick = () => {
-      navigator.clipboard.writeText(document.getElementById("offer").value);
-    };
+      // ждать сбора кандидатов (или timeout), затем собрать JSON
+      await waitForIceGatheringComplete(pc);
+      const payload = {
+        sdp: pc.localDescription,
+        candidates: localCandidates
+      };
+      document.getElementById('offerOut').value = JSON.stringify(payload);
+      alert("Offer готов — скопируй JSON и отправь другу.");
+    } catch (err) {
+      alert("Ошибка при создании Offer: " + err.message);
+      console.error(err);
+    }
+  };
 
-    // Установить Answer
-    document.getElementById("setAnswer").onclick = async () => {
-      let answer = JSON.parse(document.getElementById("answer").value);
-      await pc.setRemoteDescription(new RTCSessionDescription(answer));
-      alert("Answer установлен, звонок работает!");
-    };
+  document.getElementById('copyOffer').onclick = () => {
+    navigator.clipboard.writeText(document.getElementById('offerOut').value);
+  };
 
-    // Ответить на звонок
-    document.getElementById("answerBtn").onclick = async () => {
-      let remoteOffer = JSON.parse(document.getElementById("remoteOffer").value);
-      await pc.setRemoteDescription(new RTCSessionDescription(remoteOffer));
-      let answer = await pc.createAnswer();
+  // Ответчик: принять Offer и создать Answer
+  document.getElementById('acceptOffer').onclick = async () => {
+    try {
+      const txt = document.getElementById('offerIn').value.trim();
+      if (!txt) { alert("Вставь Offer JSON."); return; }
+      const offerObj = JSON.parse(txt);
+
+      await ensureMic();
+      createPeerConnection();
+      await addLocalTracks(pc);
+
+      // Установить remoteDescription (SDP offer)
+      await pc.setRemoteDescription(new RTCSessionDescription(offerObj.sdp));
+
+      // Добавить кандидатов, которые пришли вместе с Offer (если есть)
+      if (Array.isArray(offerObj.candidates)) {
+        for (const c of offerObj.candidates) {
+          try { await pc.addIceCandidate(new RTCIceCandidate(c)); }
+          catch(e){ console.warn("addIceCandidate(offer):", e); }
+        }
+      }
+
+      // Создать Answer и установить локальное описание
+      const answer = await pc.createAnswer();
       await pc.setLocalDescription(answer);
-      // Answer появится после сбора ICE
-    };
-  </script>
+
+      // Подождать сбор локальных кандидатов
+      await waitForIceGatheringComplete(pc);
+      const payload = {
+        sdp: pc.localDescription,
+        candidates: localCandidates
+      };
+      document.getElementById('answerOut').value = JSON.stringify(payload);
+      alert("Answer готов — скопируй JSON и отправь звонящему.");
+    } catch (err) {
+      alert("Ошибка при ответе (createAnswer): " + err.message);
+      console.error(err);
+    }
+  };
+
+  document.getElementById('copyAnswer').onclick = () => {
+    navigator.clipboard.writeText(document.getElementById('answerOut').value);
+  };
+
+  // Установить Answer на стороне звонящего
+  document.getElementById('setAnswerBtn').onclick = async () => {
+    try {
+      const txt = document.getElementById('answerIn').value.trim();
+      if (!txt) { alert("Вставь Answer JSON."); return; }
+      const answerObj = JSON.parse(txt);
+      if (!pc) { alert("PC не инициализирован: сначала создайте Offer (на стороне звонящего)."); return; }
+
+      await pc.setRemoteDescription(new RTCSessionDescription(answerObj.sdp));
+      if (Array.isArray(answerObj.candidates)) {
+        for (const c of answerObj.candidates) {
+          try { await pc.addIceCandidate(new RTCIceCandidate(c)); }
+          catch(e){ console.warn("addIceCandidate(answer):", e); }
+        }
+      }
+      alert("Answer установлен. Если всё в порядке — соединение должно установиться.");
+    } catch (err) {
+      alert("Ошибка при установке Answer: " + err.message);
+      console.error(err);
+    }
+  };
+
+  // Кнопка включения микрофона отдельно
+  document.getElementById('startMic').onclick = async () => {
+    try {
+      await ensureMic();
+      document.getElementById('startMic').disabled = true;
+    } catch(e){}
+  };
+
+})();
+</script>
 </body>
 </html>
