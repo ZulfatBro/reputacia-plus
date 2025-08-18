@@ -1,200 +1,70 @@
 <!DOCTYPE html>
-<html lang="ru">
+<html>
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Real P2P Голосовая комната</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            max-width: 600px;
-            margin: 0 auto;
-            padding: 20px;
-            text-align: center;
-        }
-        #room { display: none; }
-        #participants {
-            display: grid;
-            grid-template-columns: 1fr;
-            gap: 15px;
-            margin: 20px 0;
-        }
-        .participant {
-            border: 1px solid #ddd;
-            padding: 15px;
-            border-radius: 8px;
-        }
-        input, button {
-            padding: 10px;
-            margin: 5px 0;
-            width: 100%;
-            box-sizing: border-box;
-        }
-        button {
-            background: #4285f4;
-            color: white;
-            border: none;
-            cursor: pointer;
-        }
-        audio {
-            width: 100%;
-            margin-top: 10px;
-        }
-        #connection-info {
-            margin: 15px 0;
-            padding: 10px;
-            background: #f5f5f5;
-            border-radius: 5px;
-            word-break: break-all;
-        }
-    </style>
+  <meta charset="utf-8">
+  <title>Простой звонок WebRTC</title>
 </head>
 <body>
-    <div id="login">
-        <h1>Real P2P Голосовая комната</h1>
-        <p>Работает напрямую между браузерами через WebRTC</p>
-        <input type="text" id="username" placeholder="Ваше имя" required>
-        <button onclick="createRoom()">Создать комнату</button>
-        <p>или</p>
-        <input type="text" id="offerData" placeholder="Введите данные подключения">
-        <button onclick="joinWithOffer()">Присоединиться</button>
-    </div>
+  <h2>Звонок другу (P2P WebRTC)</h2>
 
-    <div id="room">
-        <h1 id="room-title">Комната</h1>
-        <div id="connection-info"></div>
-        <div id="participants"></div>
-        <button onclick="leaveRoom()">Покинуть комнату</button>
-    </div>
+  <button id="startBtn">Создать звонок</button><br><br>
 
-    <script>
-        // Глобальные переменные
-        let localStream;
-        let peerConnection;
-        let username;
-        let isCaller = false;
-        const iceServers = [
-            { urls: 'stun:stun.l.google.com:19302' },
-            { urls: 'stun:stun1.l.google.com:19302' },
-            { urls: 'stun:stun2.l.google.com:19302' }
-        ];
+  <textarea id="offer" placeholder="Тут будет Offer..." style="width:100%;height:100px"></textarea><br>
+  <button id="copyOffer">Скопировать Offer</button><br><br>
 
-        // Создать новую комнату
-        async function createRoom() {
-            username = document.getElementById('username').value.trim();
-            if (!username) return alert('Введите ваше имя');
-            
-            try {
-                isCaller = true;
-                await setupLocalStream();
-                setupPeerConnection();
-                
-                // Генерируем offer для подключения других участников
-                const offer = await peerConnection.createOffer();
-                await peerConnection.setLocalDescription(offer);
-                
-                // Показываем данные для подключения
-                document.getElementById('connection-info').textContent = 
-                    `Отправьте эти данные другому участнику:\n${JSON.stringify(offer)}`;
-                
-                showRoomUI();
-            } catch (err) {
-                alert('Ошибка: ' + err.message);
-            }
-        }
+  <textarea id="answer" placeholder="Вставьте сюда Answer друга..." style="width:100%;height:100px"></textarea><br>
+  <button id="setAnswer">Установить Answer</button><br><br>
 
-        // Присоединиться к существующей комнате
-        async function joinWithOffer() {
-            username = document.getElementById('username').value.trim();
-            const offerData = document.getElementById('offerData').value.trim();
-            
-            if (!username || !offerData) {
-                return alert('Введите имя и данные подключения');
-            }
-            
-            try {
-                isCaller = false;
-                await setupLocalStream();
-                setupPeerConnection();
-                
-                const offer = JSON.parse(offerData);
-                await peerConnection.setRemoteDescription(offer);
-                
-                // Создаем answer
-                const answer = await peerConnection.createAnswer();
-                await peerConnection.setLocalDescription(answer);
-                
-                // Показываем данные для обратного подключения
-                document.getElementById('connection-info').textContent = 
-                    `Отправьте эти данные создателю комнаты:\n${JSON.stringify(answer)}`;
-                
-                showRoomUI();
-            } catch (err) {
-                alert('Ошибка подключения: ' + err.message);
-            }
-        }
+  <button id="answerBtn">Ответить на звонок</button><br><br>
+  <textarea id="remoteOffer" placeholder="Вставьте сюда Offer друга..." style="width:100%;height:100px"></textarea><br>
+  <button id="createAnswer">Создать Answer</button><br><br>
+  <textarea id="myAnswer" placeholder="Скопируйте этот Answer другу..." style="width:100%;height:100px"></textarea><br>
 
-        // Настроить локальный поток
-        async function setupLocalStream() {
-            localStream = await navigator.mediaDevices.getUserMedia({ audio: true });
-            addParticipant(username, localStream, true);
-        }
+  <script>
+    let pc = new RTCPeerConnection();
+    let localStream;
 
-        // Настроить PeerConnection
-        function setupPeerConnection() {
-            peerConnection = new RTCPeerConnection({ iceServers });
-            
-            // Добавляем локальный поток
-            localStream.getTracks().forEach(track => {
-                peerConnection.addTrack(track, localStream);
-            });
-            
-            // Обработка ICE кандидатов
-            peerConnection.onicecandidate = event => {
-                if (event.candidate) {
-                    console.log('New ICE candidate:', event.candidate);
-                }
-            };
-            
-            // Обработка входящих потоков
-            peerConnection.ontrack = event => {
-                const remoteStream = event.streams[0];
-                addParticipant('Участник', remoteStream, false);
-            };
-        }
+    // Включаем микрофон
+    navigator.mediaDevices.getUserMedia({ audio: true }).then(stream => {
+      localStream = stream;
+      stream.getTracks().forEach(track => pc.addTrack(track, stream));
+    });
 
-        // Показать интерфейс комнаты
-        function showRoomUI() {
-            document.getElementById('login').style.display = 'none';
-            document.getElementById('room').style.display = 'block';
-            document.getElementById('room-title').textContent = `Комната: ${username}`;
-        }
+    // Воспроизводим звук друга
+    pc.ontrack = e => {
+      let audio = document.createElement("audio");
+      audio.srcObject = e.streams[0];
+      audio.autoplay = true;
+      document.body.appendChild(audio);
+    };
 
-        // Добавить участника
-        function addParticipant(name, stream, isLocal) {
-            const div = document.createElement('div');
-            div.className = 'participant';
-            div.innerHTML = `
-                <h3>${name} ${isLocal ? '(Вы)' : ''}</h3>
-                <audio autoplay controls></audio>
-            `;
-            div.querySelector('audio').srcObject = stream;
-            document.getElementById('participants').appendChild(div);
-        }
+    // Создать звонок (Offer)
+    document.getElementById("startBtn").onclick = async () => {
+      let offer = await pc.createOffer();
+      await pc.setLocalDescription(offer);
+      document.getElementById("offer").value = JSON.stringify(offer);
+    };
 
-        // Покинуть комнату
-        function leaveRoom() {
-            if (peerConnection) {
-                peerConnection.close();
-            }
-            if (localStream) {
-                localStream.getTracks().forEach(track => track.stop());
-            }
-            document.getElementById('participants').innerHTML = '';
-            document.getElementById('room').style.display = 'none';
-            document.getElementById('login').style.display = 'block';
-            document.getElementById('connection-info').textContent = '';
-        }
-    </script>
+    // Скопировать Offer
+    document.getElementById("copyOffer").onclick = () => {
+      navigator.clipboard.writeText(document.getElementById("offer").value);
+    };
+
+    // Установить Answer
+    document.getElementById("setAnswer").onclick = async () => {
+      let answer = JSON.parse(document.getElementById("answer").value);
+      await pc.setRemoteDescription(new RTCSessionDescription(answer));
+      alert("Answer установлен, звонок работает!");
+    };
+
+    // Ответить на звонок
+    document.getElementById("answerBtn").onclick = async () => {
+      let remoteOffer = JSON.parse(document.getElementById("remoteOffer").value);
+      await pc.setRemoteDescription(new RTCSessionDescription(remoteOffer));
+      let answer = await pc.createAnswer();
+      await pc.setLocalDescription(answer);
+      document.getElementById("myAnswer").value = JSON.stringify(answer);
+    };
+  </script>
 </body>
 </html>
