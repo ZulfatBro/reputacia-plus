@@ -5,64 +5,15 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>NeonVoice Discord Style</title>
 <style>
-  body {
-    margin: 0;
-    font-family: 'Segoe UI', sans-serif;
-    background: #0f0f17;
-    color: #fff;
-  }
-  .container {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    padding: 20px;
-  }
-  .neon-input {
-    background: #1b1b2f;
-    border: 2px solid #00fff7;
-    border-radius: 8px;
-    padding: 10px;
-    margin-bottom: 15px;
-    color: #fff;
-    font-size: 16px;
-    outline: none;
-    text-align: center;
-  }
-  .neon-btn {
-    background: #1b1b2f;
-    border: 2px solid #00fff7;
-    border-radius: 8px;
-    padding: 10px 20px;
-    margin: 5px;
-    color: #00fff7;
-    font-size: 16px;
-    cursor: pointer;
-    transition: 0.2s;
-  }
-  .neon-btn:hover {
-    box-shadow: 0 0 10px #00fff7, 0 0 20px #00fff7;
-  }
-  .channel {
-    margin-top: 20px;
-    padding: 15px;
-    width: 300px;
-    background: #111123;
-    border: 1px solid #00fff7;
-    border-radius: 8px;
-  }
-  .user-list {
-    margin-top: 10px;
-  }
-  .user {
-    margin: 5px 0;
-    padding: 5px 10px;
-    background: #1b1b2f;
-    border-radius: 5px;
-    color: #00fff7;
-  }
-  audio {
-    display: none;
-  }
+  body { margin:0; font-family:'Segoe UI', sans-serif; background:#0f0f17; color:#fff; }
+  .container { display:flex; flex-direction:column; align-items:center; padding:20px; }
+  .neon-input { background:#1b1b2f; border:2px solid #00fff7; border-radius:8px; padding:10px; margin-bottom:15px; color:#fff; font-size:16px; outline:none; text-align:center; }
+  .neon-btn { background:#1b1b2f; border:2px solid #00fff7; border-radius:8px; padding:10px 20px; margin:5px; color:#00fff7; font-size:16px; cursor:pointer; transition:0.2s; }
+  .neon-btn:hover { box-shadow:0 0 10px #00fff7, 0 0 20px #00fff7; }
+  .channel { margin-top:20px; padding:15px; width:300px; background:#111123; border:1px solid #00fff7; border-radius:8px; }
+  .user-list { margin-top:10px; }
+  .user { margin:5px 0; padding:5px 10px; background:#1b1b2f; border-radius:5px; color:#00fff7; }
+  audio { display:none; }
 </style>
 </head>
 <body>
@@ -76,62 +27,101 @@
     <div class="user-list" id="userList"></div>
   </div>
 </div>
-<audio id="remoteAudio" autoplay></audio>
+<audio id="remoteAudio" autoplay playsinline></audio>
 
 <script>
-let ws, pc, localStream;
+let ws;
+let localStream;
 let nicknameInput = document.getElementById('nickname');
 let userList = document.getElementById('userList');
+let peerConnections = {}; // ключ - никнейм, значение - RTCPeerConnection
 
 document.getElementById('joinBtn').onclick = async () => {
-  if (!nicknameInput.value) return alert('Введите никнейм!');
-  
-  ws = new WebSocket('ws://'151.115.98.198':8080');
-  ws.onopen = () => console.log('Подключено к серверу');
-  
-  ws.onmessage = async event => {
-    const data = JSON.parse(event.data);
+  if(!nicknameInput.value) return alert('Введите никнейм!');
 
-    if(data.type === 'offer'){
-      await pc.setRemoteDescription(data.offer);
-      const answer = await pc.createAnswer();
-      await pc.setLocalDescription(answer);
-      ws.send(JSON.stringify({type:'answer', answer}));
-    } 
-    else if(data.type === 'answer'){
-      await pc.setRemoteDescription(data.answer);
-    } 
-    else if(data.type === 'users'){
-      updateUserList(data.users);
-    }
+  ws = new WebSocket('ws://151.115.98.198:8080'); // поставь свой IP
+
+  ws.onopen = async () => {
+    console.log('Подключено к серверу');
+    ws.send(JSON.stringify({type:'join', nickname: nicknameInput.value}));
+
+    // получаем микрофон
+    localStream = await navigator.mediaDevices.getUserMedia({audio:true});
   };
 
-  // Отправим ник на сервер
-  ws.onopen = () => ws.send(JSON.stringify({type:'join', nickname: nicknameInput.value}));
+  ws.onmessage = async (event) => {
+    const data = JSON.parse(event.data);
 
-  // Получаем микрофон
-  localStream = await navigator.mediaDevices.getUserMedia({audio:true});
+    // Обновление списка пользователей
+    if(data.type === 'users'){
+      updateUserList(data.users);
+    }
 
-  // PeerConnection
-  pc = new RTCPeerConnection();
-  localStream.getTracks().forEach(track => pc.addTrack(track, localStream));
-  pc.ontrack = e => document.getElementById('remoteAudio').srcObject = e.streams[0];
+    // Получаем оффер
+    else if(data.type === 'offer'){
+      const from = data.from;
+      if(!peerConnections[from]){
+        createPeerConnection(from);
+      }
+      await peerConnections[from].setRemoteDescription(data.offer);
+      const answer = await peerConnections[from].createAnswer();
+      await peerConnections[from].setLocalDescription(answer);
+      ws.send(JSON.stringify({type:'answer', answer, to: from}));
+    }
+
+    // Получаем ответ
+    else if(data.type === 'answer'){
+      const from = data.from;
+      if(peerConnections[from]){
+        await peerConnections[from].setRemoteDescription(data.answer);
+      }
+    }
+  };
 };
 
 document.getElementById('callBtn').onclick = async () => {
-  if(!pc || !ws) return alert('Сначала присоединитесь к каналу!');
-  const offer = await pc.createOffer();
-  await pc.setLocalDescription(offer);
-  ws.send(JSON.stringify({type:'offer', offer}));
+  const users = Object.keys(peerConnections);
+  if(users.length === 0){
+    alert('Нет пользователей для звонка');
+    return;
+  }
+
+  for(let user of users){
+    const pc = peerConnections[user];
+    const offer = await pc.createOffer();
+    await pc.setLocalDescription(offer);
+    ws.send(JSON.stringify({type:'offer', offer, to:user}));
+  }
 };
 
+// Создание PeerConnection для нового пользователя
+function createPeerConnection(nickname){
+  const pc = new RTCPeerConnection();
+
+  // Добавляем локальные аудио дорожки
+  localStream.getTracks().forEach(track => pc.addTrack(track, localStream));
+
+  // Приём аудио от удалённого пользователя
+  pc.ontrack = e => {
+    document.getElementById('remoteAudio').srcObject = e.streams[0];
+  };
+
+  peerConnections[nickname] = pc;
+}
+
+// Обновление списка пользователей
 function updateUserList(users){
   userList.innerHTML = '';
   users.forEach(u => {
+    if(u === nicknameInput.value) return; // не показываем себя
     const div = document.createElement('div');
     div.className = 'user';
     div.innerText = u;
     userList.appendChild(div);
+
+    if(!peerConnections[u]){
+      createPeerConnection(u);
+    }
   });
 }
 </script>
