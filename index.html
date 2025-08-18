@@ -4,85 +4,112 @@
   <meta charset="UTF-8">
   <title>🎥 WebRTC Видеочат</title>
   <style>
-    body { font-family: Arial, sans-serif; background:#111; color:#fff; }
-    #users button { margin:5px; }
-    video { width: 300px; border:2px solid #fff; margin:5px; }
+    body { background:#111; color:#eee; font-family:sans-serif; text-align:center; }
+    video { width: 300px; margin: 10px; background:#000; }
+    #users { margin-top:10px; }
   </style>
 </head>
 <body>
   <h1>🎥 WebRTC Видеочат</h1>
-  <input id="nickname" placeholder="Введите ник">
+  <input id="nickname" placeholder="Ваш ник">
   <button onclick="join()">Войти</button>
 
-  <h3>Пользователи:</h3>
   <div id="users"></div>
+  <div>
+    <video id="localVideo" autoplay muted playsinline></video>
+    <video id="remoteVideo" autoplay playsinline></video>
+  </div>
 
-  <h3>Видео</h3>
-  <video id="localVideo" autoplay playsinline muted></video>
-  <video id="remoteVideo" autoplay playsinline></video>
+<script>
+let ws;
+let pc;
+let localStream;
+let nickname = '';
 
-  <script>
-    let ws, pc, localStream;
-    const servers = { iceServers: [{ urls: 'stun:stun.l.google.com:19302' }] };
+async function join(){
+  nickname = document.getElementById('nickname').value;
+  if (!nickname) return alert("Введите ник!");
 
-    function join() {
-      const nickname = document.getElementById('nickname').value;
-      if (!nickname) return alert("Введите ник!");
-      ws = new WebSocket("wss://orange-deer-allow.loca.lt"); // 👈 твой сервер
+  const SERVER_URL = prompt("Вставьте адрес WebSocket (wss://...loca.lt):", "wss://");
+  if (!SERVER_URL) return;
 
-      ws.onopen = () => ws.send(JSON.stringify({ type:'join', nickname }));
+  ws = new WebSocket(SERVER_URL);
 
-      ws.onmessage = async (event) => {
-        const data = JSON.parse(event.data);
-        if (data.type === 'users') {
-          renderUsers(data.users, nickname);
-        } else if (data.type === 'offer') {
-          await createPeerConnection();
-          await pc.setRemoteDescription(new RTCSessionDescription(data.offer));
-          const answer = await pc.createAnswer();
-          await pc.setLocalDescription(answer);
-          ws.send(JSON.stringify({ type:'answer', answer, to:data.from }));
-        } else if (data.type === 'answer') {
-          await pc.setRemoteDescription(new RTCSessionDescription(data.answer));
-        } else if (data.type === 'candidate') {
-          try { await pc.addIceCandidate(new RTCIceCandidate(data.candidate)); } catch(e) { console.error(e); }
-        }
-      };
+  ws.onopen = () => {
+    log("✅ Подключено к серверу");
+    ws.send(JSON.stringify({ type:'join', nickname }));
+  };
+
+  ws.onmessage = async (event) => {
+    const data = JSON.parse(event.data);
+
+    if (data.type === 'users') {
+      renderUsers(data.users);
     }
-
-    function renderUsers(users, me) {
-      const div = document.getElementById('users');
-      div.innerHTML = "";
-      users.filter(u => u !== me).forEach(u => {
-        const btn = document.createElement('button');
-        btn.textContent = `Позвонить ${u}`;
-        btn.onclick = () => call(u);
-        div.appendChild(btn);
-      });
-    }
-
-    async function call(to) {
+    else if (data.type === 'offer') {
       await createPeerConnection();
-      const offer = await pc.createOffer();
-      await pc.setLocalDescription(offer);
-      ws.send(JSON.stringify({ type:'offer', offer, to }));
+      await pc.setRemoteDescription(new RTCSessionDescription(data.offer));
+      const answer = await pc.createAnswer();
+      await pc.setLocalDescription(answer);
+      ws.send(JSON.stringify({ type:'answer', answer, to:data.from }));
     }
+    else if (data.type === 'answer') {
+      await pc.setRemoteDescription(new RTCSessionDescription(data.answer));
+    }
+    else if (data.type === 'candidate') {
+      try {
+        await pc.addIceCandidate(new RTCIceCandidate(data.candidate));
+      } catch (err) {
+        console.error("Ошибка ICE:", err);
+      }
+    }
+  };
+}
 
-    async function createPeerConnection() {
-      pc = new RTCPeerConnection(servers);
-      pc.onicecandidate = e => {
-        if (e.candidate) ws.send(JSON.stringify({ type:'candidate', candidate:e.candidate, to:getTarget() }));
-      };
-      pc.ontrack = e => { document.getElementById('remoteVideo').srcObject = e.streams[0]; };
-      localStream = await navigator.mediaDevices.getUserMedia({ video:true, audio:true });
-      document.getElementById('localVideo').srcObject = localStream;
-      localStream.getTracks().forEach(track => pc.addTrack(track, localStream));
-    }
+function renderUsers(users){
+  const div = document.getElementById('users');
+  div.innerHTML = "Пользователи:<br>" + users.map(u => {
+    if (u === nickname) return `<b>${u}</b>`;
+    return `<button onclick="call('${u}')">Позвонить ${u}</button>`;
+  }).join("<br>");
+}
 
-    function getTarget() {
-      const btns = document.querySelectorAll('#users button');
-      return btns.length ? btns[0].textContent.replace('Позвонить ','') : null;
+async function call(user){
+  await createPeerConnection();
+  const offer = await pc.createOffer();
+  await pc.setLocalDescription(offer);
+  ws.send(JSON.stringify({ type:'offer', offer, to:user }));
+}
+
+async function createPeerConnection(){
+  pc = new RTCPeerConnection();
+
+  pc.onicecandidate = (e) => {
+    if (e.candidate) {
+      ws.send(JSON.stringify({ type:'candidate', candidate:e.candidate, to:getOtherUser() }));
     }
-  </script>
+  };
+
+  pc.ontrack = (e) => {
+    document.getElementById('remoteVideo').srcObject = e.streams[0];
+  };
+
+  localStream = await navigator.mediaDevices.getUserMedia({ video:true, audio:true });
+  document.getElementById('localVideo').srcObject = localStream;
+  localStream.getTracks().forEach(track => pc.addTrack(track, localStream));
+}
+
+function getOtherUser(){
+  const buttons = document.querySelectorAll("#users button");
+  if (buttons.length > 0) {
+    return buttons[0].textContent.replace("Позвонить ","");
+  }
+  return null;
+}
+
+function log(msg){
+  console.log(msg);
+}
+</script>
 </body>
 </html>
