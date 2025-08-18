@@ -1,39 +1,102 @@
-const WebSocket = require('ws');
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <title>WebRTC Чат</title>
+</head>
+<body>
+  <h1>🎥 WebRTC Видеочат</h1>
+  <input id="nickname" placeholder="Ваш ник">
+  <button onclick="join()">Войти</button>
 
-// Запускаем локальный WebSocket сервер на 8080
-const wss = new WebSocket.Server({ port: 8080 });
-let users = [];
+  <h2>Пользователи:</h2>
+  <ul id="users"></ul>
 
-wss.on('connection', ws => {
-  let nickname = '';
+  <h2>Видео</h2>
+  <video id="localVideo" autoplay muted></video>
+  <video id="remoteVideo" autoplay></video>
 
-  ws.on('message', message => {
-    const data = JSON.parse(message);
+  <script>
+    let ws;
+    let pc;
+    let nickname = "";
 
-    if (data.type === 'join') {
-      nickname = data.nickname;
-      users.push({ ws, nickname });
-      broadcastUsers();
+    async function join() {
+      nickname = document.getElementById("nickname").value;
+      if (!nickname) return alert("Введите ник!");
+
+      // подключение к серверу
+      ws = new WebSocket("wss://orange-deer-allow.loca.lt");
+
+      ws.onopen = () => {
+        ws.send(JSON.stringify({ type: "join", nickname }));
+      };
+
+      ws.onmessage = async (event) => {
+        const data = JSON.parse(event.data);
+
+        if (data.type === "users") {
+          const list = document.getElementById("users");
+          list.innerHTML = "";
+          data.users.forEach(u => {
+            if (u !== nickname) {
+              const li = document.createElement("li");
+              li.innerHTML = `${u} <button onclick="call('${u}')">Позвонить</button>`;
+              list.appendChild(li);
+            }
+          });
+        }
+
+        if (data.type === "offer") {
+          await startCall(false, data.from);
+          await pc.setRemoteDescription(new RTCSessionDescription(data.offer));
+          const answer = await pc.createAnswer();
+          await pc.setLocalDescription(answer);
+          ws.send(JSON.stringify({ type: "answer", answer, to: data.from }));
+        }
+
+        if (data.type === "answer") {
+          await pc.setRemoteDescription(new RTCSessionDescription(data.answer));
+        }
+
+        if (data.type === "candidate") {
+          try {
+            await pc.addIceCandidate(new RTCIceCandidate(data.candidate));
+          } catch (err) {
+            console.error("Ошибка ICE:", err);
+          }
+        }
+      };
     }
 
-    // пересылаем оффер/ответ конкретному пользователю
-    else if (data.type === 'offer' || data.type === 'answer' || data.type === 'candidate') {
-      const target = users.find(u => u.nickname === data.to);
-      if (target) {
-        target.ws.send(JSON.stringify({ ...data, from: nickname }));
-      }
+    async function call(user) {
+      await startCall(true, user);
+      const offer = await pc.createOffer();
+      await pc.setLocalDescription(offer);
+      ws.send(JSON.stringify({ type: "offer", offer, to: user }));
     }
-  });
 
-  ws.on('close', () => {
-    users = users.filter(u => u.ws !== ws);
-    broadcastUsers();
-  });
+    async function startCall(isCaller, remoteUser) {
+      pc = new RTCPeerConnection();
 
-  function broadcastUsers() {
-    const nicknames = users.map(u => u.nickname);
-    users.forEach(u => u.ws.send(JSON.stringify({ type: 'users', users: nicknames })));
-  }
-});
+      pc.onicecandidate = (event) => {
+        if (event.candidate) {
+          ws.send(JSON.stringify({ 
+            type: "candidate", 
+            candidate: event.candidate, 
+            to: remoteUser 
+          }));
+        }
+      };
 
-console.log('✅ WebSocket сервер запущен на порту 8080');
+      pc.ontrack = (event) => {
+        document.getElementById("remoteVideo").srcObject = event.streams[0];
+      };
+
+      const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+      document.getElementById("localVideo").srcObject = stream;
+      stream.getTracks().forEach(track => pc.addTrack(track, stream));
+    }
+  </script>
+</body>
+</html>
