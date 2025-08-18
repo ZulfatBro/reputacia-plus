@@ -23,130 +23,79 @@ const App = () => {
   const [videoDevices, setVideoDevices] = useState([]);
   const [selectedAudioDevice, setSelectedAudioDevice] = useState('');
   const [selectedVideoDevice, setSelectedVideoDevice] = useState('');
-  const [channelSettings, setChannelSettings] = useState(null);
-  const [roles, setRoles] = useState({});
-  const [newRoleName, setNewRoleName] = useState('');
-  const [newRoleColor, setNewRoleColor] = useState('#8B5CF6');
   const [volume, setVolume] = useState(75);
   const [inputVolume, setInputVolume] = useState(60);
-
   const videoRef = useRef(null);
   const audioRef = useRef(null);
   const fileInputRef = useRef(null);
   const mediaStreamRef = useRef(null);
 
-  // Mock data
+  // Mock data - только ZULFS HQ сервер
   const servers = [
-    { id: 1, name: 'ZULFS HQ', icon: '🎮', channels: [
-      { id: 1, name: 'general', type: 'text', permissions: { view: ['@everyone'], send: ['@everyone'] } },
-      { id: 2, name: 'gaming', type: 'text', permissions: { view: ['@everyone'], send: ['@everyone'] } },
-      { id: 3, name: 'streaming', type: 'text', permissions: { view: ['@everyone'], send: ['@everyone'] } },
-      { id: 4, name: 'voice-chat', type: 'voice', permissions: { connect: ['@everyone'] } },
-      { id: 5, name: 'strategy', type: 'text', permissions: { view: ['@everyone'], send: ['@everyone'] } }
-    ]},
-    { id: 2, name: 'Pro Gamers', icon: '🏆', channels: [
-      { id: 6, name: 'ranked', type: 'text', permissions: { view: ['@everyone'], send: ['@everyone'] } },
-      { id: 7, name: 'tournaments', type: 'text', permissions: { view: ['@everyone'], send: ['@everyone'] } },
-      { id: 8, name: 'voice-lfg', type: 'voice', permissions: { connect: ['@everyone'] } }
-    ]},
-    { id: 3, name: 'Retro Club', icon: '🕹️', channels: [
-      { id: 9, name: 'retro-games', type: 'text', permissions: { view: ['@everyone'], send: ['@everyone'] } },
-      { id: 10, name: 'emulators', type: 'text', permissions: { view: ['@everyone'], send: ['@everyone'] } },
-      { id: 11, name: 'voice-retro', type: 'voice', permissions: { connect: ['@everyone'] } }
-    ]}
+    { 
+      id: 1, 
+      name: 'ZULFS HQ', 
+      icon: '🎮', 
+      channels: [
+        { id: 1, name: 'general', type: 'text' },
+        { id: 4, name: 'voice-chat', type: 'voice' }
+      ]
+    }
   ];
 
+  // Сообщения только для канала general
   const mockMessages = {
     1: [
-      { id: 1, user: 'ZULFS_Bot', content: 'Welcome to ZULFS! 🎮', timestamp: '10:30', avatar: '🤖', role: 'Bot' },
-      { id: 2, user: 'CyberNinja', content: 'Just finished a 10-hour gaming session! Who\'s up for some ranked?', timestamp: '10:32', avatar: '🥷', role: 'Elite Gamer' },
-      { id: 3, user: 'PixelQueen', content: 'I\'m streaming Valorant right now! Come watch!', timestamp: '10:35', avatar: '👑', role: 'Streamer' },
-      { id: 4, user: 'ZULFS_Bot', content: '🎮 New achievement unlocked: Night Owl! Stayed online for 8+ hours', timestamp: '10:40', avatar: '🤖', role: 'Bot' }
-    ],
-    2: [
-      { id: 5, user: 'ProGamerX', content: 'Tournament starts in 30 minutes! Get ready!', timestamp: '11:00', avatar: '🔥', role: 'Pro Player' },
-      { id: 6, user: 'SpeedRunner', content: 'Just beat the world record in speedrun!', timestamp: '11:05', avatar: '⚡', role: 'Speedrunner' }
-    ],
-    6: [
-      { id: 7, user: 'RankedMaster', content: 'Looking for duo for ranked matches. Any takers?', timestamp: '12:15', avatar: '🎯', role: 'Ranked Expert' },
-      { id: 8, user: 'GameTheorist', content: 'New patch analysis: meta has completely changed!', timestamp: '12:20', avatar: '🧠', role: 'Analyst' }
+      { id: 2, user: 'CyberNinja', content: 'Just finished a 10-hour gaming session! Who\'s up for some ranked?', timestamp: '10:32', avatar: '🥷' },
+      { id: 3, user: 'PixelQueen', content: 'I\'m streaming Valorant right now! Come watch!', timestamp: '10:35', avatar: '👑' }
     ]
   };
 
+  // Онлайн пользователи без ботов
   const mockOnlineUsers = [
-    { id: 1, name: 'CyberNinja', status: 'online', game: 'Valorant', avatar: '🥷', role: 'Elite Gamer' },
-    { id: 2, name: 'PixelQueen', status: 'streaming', game: 'Fortnite', avatar: '👑', role: 'Streamer' },
-    { id: 3, name: 'ProGamerX', status: 'online', game: 'CS2', avatar: '🔥', role: 'Pro Player' },
-    { id: 4, name: 'SpeedRunner', status: 'dnd', game: 'Speedrun', avatar: '⚡', role: 'Speedrunner' },
-    { id: 5, name: 'GameTheorist', status: 'idle', game: 'Research', avatar: '🧠', role: 'Analyst' },
-    { id: 6, name: 'ZULFS_Bot', status: 'online', game: 'System', avatar: '🤖', role: 'Bot' },
-    { id: 7, name: 'ShadowWarrior', status: 'online', game: 'Apex Legends', avatar: '⚔️', role: 'Veteran' },
-    { id: 8, name: 'TechWizard', status: 'online', game: 'Programming', avatar: '🧙', role: 'Developer' }
+    { id: 1, name: 'CyberNinja', status: 'online', game: 'Valorant', avatar: '🥷' },
+    { id: 2, name: 'PixelQueen', status: 'streaming', game: 'Fortnite', avatar: '👑' },
+    { id: 3, name: 'ProGamerX', status: 'online', game: 'CS2', avatar: '🔥' },
+    { id: 4, name: 'SpeedRunner', status: 'dnd', game: 'Speedrun', avatar: '⚡' },
+    { id: 5, name: 'GameTheorist', status: 'idle', game: 'Research', avatar: '🧠' },
+    { id: 7, name: 'ShadowWarrior', status: 'online', game: 'Apex Legends', avatar: ⚔️' },
+    { id: 8, name: 'TechWizard', status: 'online', game: 'Programming', avatar: '🧙' }
   ];
-
-  const defaultRoles = {
-    1: [
-      { id: 1, name: '@everyone', color: '#8B5CF6', permissions: ['view_channels', 'send_messages', 'connect_voice'] },
-      { id: 2, name: 'Moderator', color: '#F59E0B', permissions: ['view_channels', 'send_messages', 'manage_messages', 'connect_voice', 'mute_members'] },
-      { id: 3, name: 'Admin', color: '#EF4444', permissions: ['all_permissions'] }
-    ],
-    2: [
-      { id: 4, name: '@everyone', color: '#8B5CF6', permissions: ['view_channels', 'send_messages', 'connect_voice'] },
-      { id: 5, name: 'Tournament Host', color: '#10B981', permissions: ['view_channels', 'send_messages', 'manage_events', 'connect_voice'] }
-    ],
-    3: [
-      { id: 6, name: '@everyone', color: '#8B5CF6', permissions: ['view_channels', 'send_messages', 'connect_voice'] },
-      { id: 7, name: 'Retro Master', color: '#EC4899', permissions: ['view_channels', 'send_messages', 'connect_voice', 'manage_retro'] }
-    ]
-  };
 
   useEffect(() => {
     setMessages(mockMessages);
     setOnlineUsers(mockOnlineUsers);
-    setRoles(defaultRoles);
-    
-    // Simulate device enumeration
     simulateDeviceEnumeration();
   }, []);
 
   const simulateDeviceEnumeration = async () => {
     try {
-      // In a real app, we would use navigator.mediaDevices.enumerateDevices()
-      // For demo purposes, we'll simulate this with setTimeout
       setTimeout(() => {
         const mockAudioDevices = [
           { deviceId: 'mic-1', label: 'Gaming Headset Microphone', kind: 'audioinput' },
           { deviceId: 'mic-2', label: 'Built-in Microphone', kind: 'audioinput' },
           { deviceId: 'spk-1', label: 'Gaming Headset Speakers', kind: 'audiooutput' }
         ];
-        
         const mockVideoDevices = [
           { deviceId: 'cam-1', label: 'Gaming Webcam 1080p', kind: 'videoinput' },
           { deviceId: 'cam-2', label: 'Built-in Camera', kind: 'videoinput' }
         ];
-
-        // Format for our UI
         const audioInputs = mockAudioDevices
           .filter(d => d.kind === 'audioinput')
           .map(d => ({ id: d.deviceId, name: d.label, type: 'input' }));
-        
         const audioOutputs = mockAudioDevices
           .filter(d => d.kind === 'audiooutput')
           .map(d => ({ id: d.deviceId, name: d.label, type: 'output' }));
-        
         const videoInputs = mockVideoDevices
           .filter(d => d.kind === 'videoinput')
           .map(d => ({ id: d.deviceId, name: d.label }));
-
         setAudioDevices([...audioInputs, ...audioOutputs]);
         setVideoDevices(videoInputs);
-        
         if (audioInputs.length > 0) setSelectedAudioDevice(audioInputs[0].id);
         if (videoInputs.length > 0) setSelectedVideoDevice(videoInputs[0].id);
       }, 500);
     } catch (error) {
       console.error('Error accessing media devices:', error);
-      // Fallback to mock data
       setAudioDevices([
         { id: 'mic-1', name: 'Default Microphone', type: 'input' },
         { id: 'spk-1', name: 'Default Speakers', type: 'output' }
@@ -164,10 +113,11 @@ const App = () => {
     if (registerData.username && registerData.password && registerData.secret) {
       setCurrentUser({ 
         username: registerData.username, 
-        avatar: '👤',
-        role: '@everyone'
+        avatar: '👤'
       });
       setLoginView(false);
+      setActiveServer(1);
+      setActiveChannel(1);
     }
   };
 
@@ -176,10 +126,11 @@ const App = () => {
     if (loginData.username && loginData.password) {
       setCurrentUser({ 
         username: loginData.username, 
-        avatar: '👤',
-        role: '@everyone'
+        avatar: '👤'
       });
       setLoginView(false);
+      setActiveServer(1);
+      setActiveChannel(1);
     }
   };
 
@@ -190,10 +141,8 @@ const App = () => {
         user: currentUser.username,
         content: newMessage,
         timestamp: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}),
-        avatar: currentUser.avatar,
-        role: currentUser.role
+        avatar: currentUser.avatar
       };
-      
       setMessages(prev => ({
         ...prev,
         [activeChannel]: [...(prev[activeChannel] || []), message]
@@ -205,15 +154,10 @@ const App = () => {
   const toggleVoice = async () => {
     try {
       if (!voiceActive) {
-        // Request microphone access
         const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
         mediaStreamRef.current = stream;
-        
-        // In a real app, we would connect this to our audio system
-        // For demo, we'll just simulate success
         setVoiceActive(true);
       } else {
-        // Stop microphone access
         if (mediaStreamRef.current) {
           mediaStreamRef.current.getTracks().forEach(track => track.stop());
           mediaStreamRef.current = null;
@@ -229,15 +173,10 @@ const App = () => {
   const toggleVideo = async () => {
     try {
       if (!videoActive) {
-        // Request camera access
         const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
         mediaStreamRef.current = stream;
-        
-        // In a real app, we would display this stream
-        // For demo, we'll just simulate success
         setVideoActive(true);
       } else {
-        // Stop camera access
         if (mediaStreamRef.current) {
           mediaStreamRef.current.getTracks().forEach(track => track.stop());
           mediaStreamRef.current = null;
@@ -253,20 +192,13 @@ const App = () => {
   const toggleScreenShare = async () => {
     try {
       if (!screenShareActive) {
-        // Request screen sharing access
         const stream = await navigator.mediaDevices.getDisplayMedia({ video: true });
         mediaStreamRef.current = stream;
-        
-        // In a real app, we would share this stream
-        // For demo, we'll just simulate success
         setScreenShareActive(true);
-        
-        // Stop screen sharing when the user stops sharing
         stream.getVideoTracks()[0].addEventListener('ended', () => {
           setScreenShareActive(false);
         });
       } else {
-        // Stop screen sharing
         if (mediaStreamRef.current) {
           mediaStreamRef.current.getTracks().forEach(track => track.stop());
           mediaStreamRef.current = null;
@@ -303,28 +235,6 @@ const App = () => {
     }
   };
 
-  const addRole = () => {
-    if (newRoleName && activeServer) {
-      const serverRoles = roles[activeServer] || [];
-      const newRole = {
-        id: Date.now(),
-        name: newRoleName,
-        color: newRoleColor,
-        permissions: ['view_channels', 'send_messages', 'connect_voice']
-      };
-      setRoles(prev => ({
-        ...prev,
-        [activeServer]: [...serverRoles, newRole]
-      }));
-      setNewRoleName('');
-    }
-  };
-
-  const updateChannelPermissions = (channelId, permission, roleId) => {
-    // This would update channel permissions in a real app
-    console.log('Update permissions:', { channelId, permission, roleId });
-  };
-
   const handleFileUpload = (event) => {
     const file = event.target.files[0];
     if (file) {
@@ -344,6 +254,8 @@ const App = () => {
     setInputVolume(parseInt(e.target.value));
   };
 
+  const isVoiceChannelActive = activeChannel === 4;
+
   if (loginView) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900 flex items-center justify-center p-4">
@@ -352,7 +264,6 @@ const App = () => {
           <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-blue-500 rounded-full filter blur-3xl opacity-20 animate-pulse delay-1000"></div>
           <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-indigo-500 rounded-full filter blur-3xl opacity-10 animate-pulse delay-2000"></div>
         </div>
-        
         <div className="relative z-10 w-full max-w-md">
           <div className="bg-black bg-opacity-40 backdrop-blur-lg rounded-2xl p-8 border border-purple-500 border-opacity-30 shadow-2xl">
             <div className="text-center mb-8">
@@ -360,26 +271,27 @@ const App = () => {
               <h1 className="text-3xl font-bold text-white mb-2">ZULFS</h1>
               <p className="text-purple-200">Gaming Communication Platform</p>
             </div>
-
             <div className="mb-6">
               <h2 className="text-xl font-semibold text-white mb-4">Welcome to ZULFS</h2>
               <p className="text-purple-200 text-sm mb-4">The ultimate gaming communication platform for elite gamers.</p>
-              
               <button
                 onClick={() => {
                   setLoginData({ username: 'demo', password: 'demo' });
-                  setTimeout(() => setCurrentUser({ 
-                    username: 'GamerPro', 
-                    avatar: '🎮',
-                    role: 'Elite Member'
-                  }), 1000);
+                  setTimeout(() => {
+                    setCurrentUser({ 
+                      username: 'GamerPro', 
+                      avatar: '🎮'
+                    });
+                    setLoginView(false);
+                    setActiveServer(1);
+                    setActiveChannel(1);
+                  }, 1000);
                 }}
                 className="w-full bg-gradient-to-r from-purple-600 to-blue-600 text-white py-3 rounded-lg font-semibold hover:from-purple-700 hover:to-blue-700 transition-all duration-300 transform hover:scale-105 mb-4 shadow-lg"
               >
                 Quick Demo Login
               </button>
             </div>
-
             <div className="space-y-4">
               <button
                 onClick={() => setLoginView(false)}
@@ -387,7 +299,6 @@ const App = () => {
               >
                 Register
               </button>
-              
               <button
                 onClick={handleLogin}
                 className="w-full bg-gradient-to-r from-purple-600 to-blue-600 text-white py-3 rounded-lg font-semibold hover:from-purple-700 hover:to-blue-700 transition-all duration-300 transform hover:scale-105 shadow-lg"
@@ -395,7 +306,6 @@ const App = () => {
                 Login
               </button>
             </div>
-
             <div className="mt-6 text-center">
               <p className="text-purple-200 text-sm">
                 No email required • Secure gaming communication • Real-time voice & video
@@ -415,12 +325,11 @@ const App = () => {
         <div className="absolute -bottom-20 -left-20 w-60 h-60 bg-blue-500 rounded-full filter blur-3xl opacity-10 animate-pulse delay-1000"></div>
         <div className="absolute top-1/3 left-1/4 w-40 h-40 bg-indigo-500 rounded-full filter blur-3xl opacity-5 animate-pulse delay-2000"></div>
       </div>
-
+      
       {/* Sidebar */}
       {sidebarOpen && (
         <div className="w-16 bg-black bg-opacity-50 backdrop-blur-lg border-r border-purple-500 border-opacity-30 flex flex-col items-center py-4 space-y-6 flex-shrink-0">
           <div className="text-2xl mb-6">🎮</div>
-          
           {servers.map(server => (
             <button
               key={server.id}
@@ -438,7 +347,6 @@ const App = () => {
               {server.icon}
             </button>
           ))}
-          
           <div className="mt-auto pt-8 space-y-4">
             <button 
               className="w-10 h-10 rounded-full bg-gradient-to-r from-green-600 to-teal-600 flex items-center justify-center text-lg hover:scale-110 transition-all duration-300 shadow-lg shadow-green-500/50"
@@ -456,7 +364,7 @@ const App = () => {
           </div>
         </div>
       )}
-
+      
       {/* Main Content */}
       <div className="flex-1 flex">
         {/* Server Channels Sidebar */}
@@ -467,7 +375,6 @@ const App = () => {
                 {servers.find(s => s.id === activeServer)?.icon} {servers.find(s => s.id === activeServer)?.name}
               </h2>
             </div>
-            
             <div className="flex-1 overflow-y-auto">
               <div className="p-2">
                 <h3 className="text-xs uppercase text-purple-300 font-semibold mb-3 px-2">Text Channels</h3>
@@ -488,7 +395,6 @@ const App = () => {
                     </button>
                   ))}
               </div>
-              
               <div className="p-2">
                 <h3 className="text-xs uppercase text-purple-300 font-semibold mb-3 px-2">Voice Channels</h3>
                 {servers.find(s => s.id === activeServer)?.channels
@@ -511,7 +417,7 @@ const App = () => {
             </div>
           </div>
         )}
-
+        
         {/* Chat Area */}
         <div className="flex-1 flex flex-col">
           {/* Channel Header */}
@@ -554,24 +460,17 @@ const App = () => {
                 >
                   {screenShareActive ? '🖥️' : '📺'}
                 </button>
-                <button
-                  onClick={() => setChannelSettings(activeChannel)}
-                  className="p-2 rounded-lg bg-gray-700 text-gray-300 hover:bg-gray-600 transition-all duration-200"
-                  title="Channel Settings"
-                >
-                  ⚙️
-                </button>
               </div>
             </div>
           )}
-
+          
           {/* Messages */}
           <div className="flex-1 overflow-y-auto p-6 space-y-4">
             {activeChannel ? (
               (messages[activeChannel] || []).map(message => (
                 <div key={message.id} className="flex items-start space-x-3 animate-fade-in">
                   <img 
-                    src={typeof message.avatar === 'string' && message.avatar.startsWith('data:') 
+                    src={typeof message.avatar === 'string' && message.avatar.startsWith('') 
                       ? message.avatar 
                       : `https://placehold.co/40x40/6366f1/ffffff?text=${message.avatar}`} 
                     alt={message.user}
@@ -580,11 +479,6 @@ const App = () => {
                   <div className="flex-1">
                     <div className="flex items-center space-x-2 mb-1">
                       <span className="font-semibold text-white">{message.user}</span>
-                      {message.role && (
-                        <span className="text-xs px-2 py-1 rounded-full" style={{ backgroundColor: roles[activeServer]?.find(r => r.name === message.role)?.color || '#8B5CF6', color: 'white' }}>
-                          {message.role}
-                        </span>
-                      )}
                       <span className="text-xs text-gray-400">{message.timestamp}</span>
                     </div>
                     <p className="text-gray-200 leading-relaxed">{message.content}</p>
@@ -601,7 +495,7 @@ const App = () => {
               </div>
             )}
           </div>
-
+          
           {/* Message Input */}
           {activeChannel && (
             <div className="p-4 border-t border-purple-500 border-opacity-20">
@@ -625,13 +519,12 @@ const App = () => {
             </div>
           )}
         </div>
-
+        
         {/* Right Sidebar - Online Users */}
         <div className="w-80 bg-black bg-opacity-30 backdrop-blur-lg border-l border-purple-500 border-opacity-20 flex flex-col">
           <div className="p-4 border-b border-purple-500 border-opacity-20">
             <h3 className="font-bold text-white">Online ({onlineUsers.length})</h3>
           </div>
-          
           <div className="flex-1 p-4 space-y-3">
             {onlineUsers.map(user => (
               <div key={user.id} className="flex items-center space-x-3 p-2 rounded-lg hover:bg-white hover:bg-opacity-10 transition-all duration-200 cursor-pointer group">
@@ -653,24 +546,19 @@ const App = () => {
                     {user.status === 'streaming' && <span className="text-xs bg-red-600 text-white px-2 py-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity">🔴 LIVE</span>}
                   </div>
                 </div>
-                {user.role && (
-                  <span className="text-xs px-2 py-1 rounded-full text-white" style={{ backgroundColor: roles[activeServer]?.find(r => r.name === user.role)?.color || '#8B5CF6' }}>
-                    {user.role}
-                  </span>
-                )}
               </div>
             ))}
           </div>
-
+          
           {/* User Profile Card */}
           {currentUser && (
-            <div className="p-4 border-t border-purple-500 border-opacity-20">
+            <div className="p-4 border-t border-purple-500 border-opacity-20 bg-black bg-opacity-30">
               <div 
                 className="flex items-center space-x-3 p-3 rounded-lg hover:bg-white hover:bg-opacity-10 transition-all duration-200 cursor-pointer"
                 onClick={handleAvatarClick}
               >
                 <img 
-                  src={typeof currentUser.avatar === 'string' && currentUser.avatar.startsWith('data:') 
+                  src={typeof currentUser.avatar === 'string' && currentUser.avatar.startsWith('') 
                     ? currentUser.avatar 
                     : `https://placehold.co/40x40/6366f1/ffffff?text=${currentUser.avatar}`} 
                   alt={currentUser.username}
@@ -678,11 +566,6 @@ const App = () => {
                 />
                 <div className="flex-1 min-w-0">
                   <p className="font-semibold text-white">{currentUser.username}</p>
-                  {currentUser.role && (
-                    <span className="text-xs px-2 py-1 rounded-full text-white" style={{ backgroundColor: roles[activeServer]?.find(r => r.name === currentUser.role)?.color || '#8B5CF6' }}>
-                      {currentUser.role}
-                    </span>
-                  )}
                 </div>
                 <span className="text-sm text-gray-400">▶</span>
               </div>
@@ -690,7 +573,84 @@ const App = () => {
           )}
         </div>
       </div>
-
+      
+      {/* Voice Channel Controls */}
+      {isVoiceChannelActive && (
+        <div className="fixed bottom-6 left-1/2 transform -translate-x-1/2 bg-black bg-opacity-70 backdrop-blur-lg rounded-2xl px-6 py-4 flex items-center space-x-4 border border-purple-500 border-opacity-30 z-50 min-w-96">
+          <div className="flex-1 flex items-center space-x-4">
+            <button 
+              onClick={toggleVoice}
+              className={`p-3 rounded-full transition-all duration-200 ${
+                voiceActive 
+                  ? 'bg-red-600 text-white' 
+                  : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+              }`}
+              title="Microphone"
+            >
+              {voiceActive ? '🎤' : '🔇'}
+            </button>
+            <button 
+              onClick={toggleVideo}
+              className={`p-3 rounded-full transition-all duration-200 ${
+                videoActive 
+                  ? 'bg-blue-600 text-white' 
+                  : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+              }`}
+              title="Camera"
+            >
+              {videoActive ? '📹' : '🎥'}
+            </button>
+            <button 
+              onClick={toggleScreenShare}
+              className={`p-3 rounded-full transition-all duration-200 ${
+                screenShareActive 
+                  ? 'bg-green-600 text-white' 
+                  : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+              }`}
+              title="Screen Share"
+            >
+              {screenShareActive ? '🖥️' : '📺'}
+            </button>
+          </div>
+          <div className="flex items-center space-x-4">
+            <div className="flex items-center space-x-2">
+              <span className="text-sm text-gray-300">Mic</span>
+              <input
+                type="range"
+                min="0"
+                max="100"
+                value={inputVolume}
+                onChange={handleInputVolumeChange}
+                className="w-20 h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer"
+              />
+            </div>
+            <div className="flex items-center space-x-2">
+              <span className="text-sm text-gray-300">Vol</span>
+              <input
+                type="range"
+                min="0"
+                max="100"
+                value={volume}
+                onChange={handleVolumeChange}
+                className="w-20 h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer"
+              />
+            </div>
+          </div>
+          <button 
+            onClick={() => {
+              setActiveChannel(1);
+              setVoiceActive(false);
+              setVideoActive(false);
+              setScreenShareActive(false);
+            }}
+            className="p-3 bg-red-600 text-white rounded-full hover:bg-red-700 transition-all duration-200"
+            title="Leave Voice Channel"
+          >
+            🚪
+          </button>
+        </div>
+      )}
+      
       {/* Floating Action Button */}
       <button
         onClick={() => setSidebarOpen(!sidebarOpen)}
@@ -698,7 +658,7 @@ const App = () => {
       >
         {sidebarOpen ? '⬅️' : '➡️'}
       </button>
-
+      
       {/* Settings Modal */}
       {showSettings && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
@@ -712,7 +672,6 @@ const App = () => {
                 ×
               </button>
             </div>
-
             <div className="flex space-x-6 mb-6">
               <button
                 onClick={() => setSettingsTab('user')}
@@ -734,18 +693,7 @@ const App = () => {
               >
                 Audio & Video
               </button>
-              <button
-                onClick={() => setSettingsTab('server')}
-                className={`px-4 py-2 rounded-lg font-semibold transition-all duration-200 ${
-                  settingsTab === 'server' 
-                    ? 'bg-purple-600 text-white' 
-                    : 'text-gray-400 hover:text-white'
-                }`}
-              >
-                Server Settings
-              </button>
             </div>
-
             {settingsTab === 'user' && (
               <div className="space-y-6">
                 <div>
@@ -776,7 +724,6 @@ const App = () => {
                     </div>
                   </div>
                 </div>
-
                 <div>
                   <label className="block text-sm font-medium text-gray-300 mb-2">Username</label>
                   <input
@@ -786,7 +733,6 @@ const App = () => {
                     className="w-full bg-gray-800 border border-gray-600 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-purple-500"
                   />
                 </div>
-
                 <div>
                   <label className="block text-sm font-medium text-gray-300 mb-2">Password</label>
                   <input
@@ -797,19 +743,8 @@ const App = () => {
                   />
                   <p className="text-xs text-gray-400 mt-1">Password cannot be changed in demo</p>
                 </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-2">Secret Question</label>
-                  <input
-                    type="text"
-                    value="What was your first gaming console?"
-                    disabled
-                    className="w-full bg-gray-800 border border-gray-600 rounded-lg px-4 py-3 text-gray-400"
-                  />
-                </div>
               </div>
             )}
-
             {settingsTab === 'audio' && (
               <div className="space-y-6">
                 <div>
@@ -830,7 +765,6 @@ const App = () => {
                     </div>
                   )}
                 </div>
-
                 <div>
                   <h3 className="text-lg font-semibold text-white mb-4">Audio Output</h3>
                   {audioDevices.filter(d => d.type === 'output').length > 0 ? (
@@ -850,7 +784,6 @@ const App = () => {
                   )}
                   <p className="text-xs text-gray-400 mt-1">Output device selection requires browser permissions</p>
                 </div>
-
                 <div>
                   <h3 className="text-lg font-semibold text-white mb-4">Video Input</h3>
                   {videoDevices.length > 0 ? (
@@ -869,7 +802,6 @@ const App = () => {
                     </div>
                   )}
                 </div>
-
                 <div className="bg-gray-800 rounded-lg p-4">
                   <h4 className="font-semibold text-white mb-2">Input Volume</h4>
                   <input
@@ -885,7 +817,6 @@ const App = () => {
                     <span>{inputVolume}%</span>
                     <span>Max</span>
                   </div>
-
                   <h4 className="font-semibold text-white mb-2 mt-4">Output Volume</h4>
                   <input
                     type="range"
@@ -903,61 +834,6 @@ const App = () => {
                 </div>
               </div>
             )}
-
-            {settingsTab === 'server' && (
-              <div className="space-y-6">
-                <div>
-                  <h3 className="text-lg font-semibold text-white mb-4">Roles & Permissions</h3>
-                  <p className="text-gray-300 mb-4">Manage roles and permissions for {servers.find(s => s.id === activeServer)?.name}</p>
-                  
-                  <div className="space-y-3 mb-6">
-                    {roles[activeServer]?.map(role => (
-                      <div key={role.id} className="flex items-center justify-between p-3 bg-gray-800 rounded-lg">
-                        <div className="flex items-center space-x-3">
-                          <div 
-                            className="w-4 h-4 rounded-full"
-                            style={{ backgroundColor: role.color }}
-                          ></div>
-                          <span className="font-medium text-white">{role.name}</span>
-                        </div>
-                        <button className="text-red-400 hover:text-red-300 text-sm">Remove</button>
-                      </div>
-                    ))}
-                  </div>
-
-                  <div className="p-4 bg-gray-800 rounded-lg">
-                    <h4 className="font-semibold text-white mb-3">Create New Role</h4>
-                    <div className="space-y-3">
-                      <input
-                        type="text"
-                        placeholder="Role name"
-                        value={newRoleName}
-                        onChange={(e) => setNewRoleName(e.target.value)}
-                        className="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-2 text-white"
-                      />
-                      <div className="flex items-center space-x-3">
-                        <label className="text-gray-300 text-sm">Color:</label>
-                        <input
-                          type="color"
-                          value={newRoleColor}
-                          onChange={(e) => setNewRoleColor(e.target.value)}
-                          className="w-10 h-10 rounded cursor-pointer"
-                        />
-                        <span className="text-gray-300 text-sm">{newRoleColor}</span>
-                      </div>
-                      <button
-                        onClick={addRole}
-                        disabled={!newRoleName}
-                        className="w-full bg-purple-600 text-white py-2 rounded-lg hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed"
-                      >
-                        Create Role
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
-
             <div className="flex justify-end mt-6">
               <button
                 onClick={() => setShowSettings(false)}
@@ -969,7 +845,7 @@ const App = () => {
           </div>
         </div>
       )}
-
+      
       {/* Profile Modal */}
       {showProfile && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
@@ -983,11 +859,10 @@ const App = () => {
                 ×
               </button>
             </div>
-
             <div className="space-y-6">
               <div className="flex flex-col items-center space-y-4">
                 <img 
-                  src={typeof profileData.avatar === 'string' && profileData.avatar.startsWith('data:') 
+                  src={typeof profileData.avatar === 'string' && profileData.avatar.startsWith('') 
                     ? profileData.avatar 
                     : `https://placehold.co/100x100/6366f1/ffffff?text=${profileData.avatar}`} 
                   alt="Avatar"
@@ -1009,7 +884,6 @@ const App = () => {
                   </button>
                 </div>
               </div>
-
               <div>
                 <label className="block text-sm font-medium text-gray-300 mb-2">Username</label>
                 <input
@@ -1019,7 +893,6 @@ const App = () => {
                   className="w-full bg-gray-800 border border-gray-600 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-purple-500"
                 />
               </div>
-
               <div>
                 <label className="block text-sm font-medium text-gray-300 mb-2">Password</label>
                 <input
@@ -1030,7 +903,6 @@ const App = () => {
                   className="w-full bg-gray-800 border border-gray-600 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-purple-500"
                 />
               </div>
-
               <div className="flex space-x-3 pt-4">
                 <button
                   onClick={() => setShowProfile(false)}
@@ -1050,72 +922,7 @@ const App = () => {
           </div>
         </div>
       )}
-
-      {/* Channel Settings Modal */}
-      {channelSettings && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-gray-900 rounded-2xl p-6 w-full max-w-2xl max-h-90vh overflow-y-auto border border-purple-500 border-opacity-30">
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-2xl font-bold text-white">Channel Settings</h2>
-              <button 
-                onClick={() => setChannelSettings(null)}
-                className="text-gray-400 hover:text-white text-2xl"
-              >
-                ×
-              </button>
-            </div>
-
-            <div className="space-y-6">
-              <div>
-                <h3 className="text-lg font-semibold text-white mb-4">Permissions</h3>
-                <p className="text-gray-300 mb-4">Configure who can access and use this channel</p>
-                
-                <div className="space-y-4">
-                  {roles[activeServer]?.map(role => (
-                    <div key={role.id} className="flex items-center justify-between p-3 bg-gray-800 rounded-lg">
-                      <div className="flex items-center space-x-3">
-                        <div 
-                          className="w-4 h-4 rounded-full"
-                          style={{ backgroundColor: role.color }}
-                        ></div>
-                        <span className="font-medium text-white">{role.name}</span>
-                      </div>
-                      <div className="flex items-center space-x-4">
-                        <label className="flex items-center space-x-2">
-                          <input 
-                            type="checkbox" 
-                            defaultChecked={true}
-                            className="w-4 h-4 text-purple-600 rounded focus:ring-purple-500"
-                          />
-                          <span className="text-sm text-gray-300">View</span>
-                        </label>
-                        <label className="flex items-center space-x-2">
-                          <input 
-                            type="checkbox" 
-                            defaultChecked={role.name !== '@everyone' || servers.find(s => s.id === activeServer)?.channels.find(c => c.id === channelSettings)?.type === 'voice'}
-                            className="w-4 h-4 text-purple-600 rounded focus:ring-purple-500"
-                          />
-                          <span className="text-sm text-gray-300">Send</span>
-                        </label>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              <div className="flex justify-end pt-6">
-                <button
-                  onClick={() => setChannelSettings(null)}
-                  className="bg-purple-600 text-white px-6 py-2 rounded-lg hover:bg-purple-700 transition-all duration-200"
-                >
-                  Save Changes
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
+      
       <style jsx>{`
         @keyframes fade-in {
           from {
@@ -1130,7 +937,6 @@ const App = () => {
         .animate-fade-in {
           animation: fade-in 0.3s ease-out;
         }
-        
         .slider::-webkit-slider-thumb {
           appearance: none;
           height: 20px;
@@ -1140,7 +946,6 @@ const App = () => {
           cursor: pointer;
           box-shadow: 0 0 10px rgba(139, 92, 246, 0.5);
         }
-        
         .slider::-moz-range-thumb {
           height: 20px;
           width: 20px;
