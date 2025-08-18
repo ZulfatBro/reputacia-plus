@@ -38,11 +38,26 @@
       document.body.appendChild(audio);
     };
 
+    // --- Кандидаты ICE (нужны для соединения через интернет) ---
+    let pendingCandidates = [];
+    pc.onicecandidate = event => {
+      if (event.candidate) {
+        pendingCandidates.push(event.candidate);
+      } else {
+        // Когда кандидаты собраны, обновляем описание
+        if (pc.localDescription.type === "offer") {
+          document.getElementById("offer").value = JSON.stringify(pc.localDescription);
+        } else if (pc.localDescription.type === "answer") {
+          document.getElementById("myAnswer").value = JSON.stringify(pc.localDescription);
+        }
+      }
+    };
+
     // Создать звонок (Offer)
     document.getElementById("startBtn").onclick = async () => {
       let offer = await pc.createOffer();
       await pc.setLocalDescription(offer);
-      document.getElementById("offer").value = JSON.stringify(offer);
+      // Текст появится после сбора ICE
     };
 
     // Скопировать Offer
@@ -63,7 +78,7 @@
       await pc.setRemoteDescription(new RTCSessionDescription(remoteOffer));
       let answer = await pc.createAnswer();
       await pc.setLocalDescription(answer);
-      document.getElementById("myAnswer").value = JSON.stringify(answer);
+      // Answer появится после сбора ICE
     };
   </script>
 </body>
