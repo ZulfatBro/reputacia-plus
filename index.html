@@ -1,186 +1,59 @@
 <!DOCTYPE html>
-<html lang="ru">
+<html>
 <head>
   <meta charset="utf-8" />
-  <title>Неоновый P2P-звонок (WebRTC)</title>
+  <title>Простой P2P-звонок (ручной обмен JSON)</title>
   <style>
-    @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700&display=swap');
-
-    body {
-      font-family: 'Orbitron', Arial, sans-serif;
-      background-color: #0a0a1a;
-      color: #00ffcc;
-      max-width: 900px;
-      margin: 30px auto;
-      padding: 20px;
-      border: 2px solid #00ffcc;
-      border-radius: 15px;
-      box-shadow: 0 0 20px #00ffcc, 0 0 40px #00ffcc inset;
-      position: relative;
-      overflow: hidden;
-    }
-
-    body::before {
-      content: "";
-      position: absolute;
-      top: 0; left: 0;
-      width: 100%; height: 100%;
-      background: linear-gradient(45deg, rgba(0, 255, 204, 0.05), rgba(255, 0, 255, 0.05));
-      z-index: -1;
-      pointer-events: none;
-    }
-
-    h2, h3 {
-      color: #00ffaa;
-      text-shadow: 0 0 10px #00ffaa, 0 0 20px #00ffaa;
-      border-bottom: 2px dashed #00ffaa;
-      padding-bottom: 10px;
-    }
-
-    h2 {
-      font-size: 2em;
-      text-align: center;
-    }
-
-    h3 {
-      font-size: 1.4em;
-    }
-
-    .hint {
-      color: #ff00ff;
-      font-size: 0.9em;
-      font-style: italic;
-      text-shadow: 0 0 5px #ff00ff;
-    }
-
-    textarea {
-      width: 100%;
-      height: 120px;
-      background-color: #0f0f2f;
-      color: #00ffcc;
-      border: 2px solid #00ffcc;
-      border-radius: 10px;
-      padding: 10px;
-      font-family: monospace;
-      box-shadow: 0 0 10px #00ffcc;
-      resize: vertical;
-      transition: box-shadow 0.3s ease;
-    }
-
-    textarea:focus {
-      outline: none;
-      box-shadow: 0 0 15px #00ffcc, 0 0 25px #00ffcc;
-    }
-
-    button {
-      background: transparent;
-      color: #00ffcc;
-      border: 2px solid #00ffcc;
-      border-radius: 8px;
-      padding: 10px 16px;
-      margin: 6px 5px;
-      font-family: 'Orbitron', sans-serif;
-      cursor: pointer;
-      transition: all 0.3s ease;
-      box-shadow: 0 0 5px #00ffcc;
-    }
-
-    button:hover {
-      background-color: rgba(0, 255, 204, 0.1);
-      box-shadow: 0 0 15px #00ffcc, 0 0 25px #00ffcc;
-      transform: scale(1.05);
-    }
-
-    button:active {
-      transform: scale(0.98);
-    }
-
-    .row {
-      margin-bottom: 15px;
-    }
-
-    audio {
-      display: block;
-      margin-top: 15px;
-      width: 100%;
-      background-color: #000;
-      border-radius: 8px;
-      border: 1px solid #00ffcc;
-    }
-
-    audio::-webkit-media-controls {
-      color: #00ffcc;
-    }
-
-    hr {
-      border: 1px dashed #00ffcc;
-      margin: 25px 0;
-      box-shadow: 0 0 5px #00ffcc;
-    }
-
-    #micStatus {
-      font-size: 0.9em;
-      margin-left: 10px;
-    }
-
-    #remoteAudioHolder {
-      margin-top: 20px;
-      padding: 15px;
-      background: rgba(0, 255, 204, 0.05);
-      border: 1px solid #00ffaa;
-      border-radius: 10px;
-    }
-
-    #remoteAudioHolder::before {
-      content: "🎧 Входящий аудиопоток";
-      display: block;
-      margin-bottom: 10px;
-      color: #ff00ff;
-      font-weight: bold;
-      text-shadow: 0 0 5px #ff00ff;
-    }
+    body { font-family: Arial, sans-serif; max-width: 900px; margin: 20px auto; }
+    textarea { width:100%; height:120px; }
+    button { margin:6px 0; padding:8px 12px; }
+    .row { margin-bottom:12px; }
+    audio { display:block; margin-top:8px; }
+    .hint { color:#666; font-size:0.9em; }
   </style>
 </head>
 <body>
-  <h2>🌀 Неоновый P2P-звонок (WebRTC)</h2>
-  <div class="hint">⚠️ Внимание: открывать по HTTPS или localhost. Для NAT требуется TURN-сервер.</div>
+  <h2>Простой P2P-звонок (WebRTC, ручной обмен JSON)</h2>
+  <div class="hint">Внимание: открывать страницу нужно по HTTPS (или localhost). Для надёжной связи в сложных NAT требуется TURN-сервер.</div>
 
   <div class="row">
-    <button id="startMic">🎤 Включить микрофон</button>
-    <span id="micStatus"></span>
+    <button id="startMic">Включить микрофон</button>
+    <span id="micStatus" class="hint"></span>
   </div>
 
   <hr>
 
-  <h3>1️⃣ Звонящий: Создать Offer</h3>
+  <h3>1) Тот, кто звонит — Создать Offer</h3>
   <div class="row">
-    <button id="createOffer">▶️ Создать Offer</button>
-    <button id="copyOffer">📋 Скопировать Offer</button>
+    <button id="createOffer">Создать Offer (ждать несколько сек)</button>
+    <button id="copyOffer">Скопировать Offer</button>
   </div>
   <textarea id="offerOut" placeholder="Здесь появится Offer JSON (скопируй и отправь другу)"></textarea>
 
   <hr>
 
-  <h3>2️⃣ Ответчик: Принять Offer и создать Answer</h3>
+  <h3>2) Тот, кто отвечает — Вставить Offer и создать Answer</h3>
   <div class="row">
-    <textarea id="offerIn" placeholder="Вставь сюда Offer от звонящего..."></textarea>
-    <button id="acceptOffer">✅ Принять Offer</button>
-    <button id="copyAnswer">📋 Скопировать Answer</button>
+    <textarea id="offerIn" placeholder="Вставь сюда Offer, который прислал звонящий"></textarea>
+    <button id="acceptOffer">Принять Offer и создать Answer</button>
+    <button id="copyAnswer">Скопировать Answer</button>
   </div>
-  <textarea id="answerOut" placeholder="Здесь появится Answer JSON (отправь звонящему)"></textarea>
+  <textarea id="answerOut" placeholder="Здесь появится Answer JSON (скопируй и отправь звонящему)"></textarea>
 
   <hr>
 
-  <h3>3️⃣ Звонящий: Установить Answer</h3>
+  <h3>3) Звонящий — вставить Answer</h3>
   <div class="row">
-    <textarea id="answerIn" placeholder="Вставь сюда Answer от друга..."></textarea>
-    <button id="setAnswerBtn">🔧 Установить Answer</button>
+    <textarea id="answerIn" placeholder="Вставь сюда Answer от друга и нажми 'Установить Answer'"></textarea>
+    <button id="setAnswerBtn">Установить Answer</button>
   </div>
 
+  <hr>
   <div id="remoteAudioHolder"></div>
 
 <script>
 (async () => {
+  // Конфигурация с STUN (можно добавить TURN при наличии)
   const pcConfig = {
     iceServers: [
       { urls: ["stun:stun.l.google.com:19302", "stun:stun1.l.google.com:19302"] },
@@ -198,17 +71,19 @@
     localCandidates = [];
 
     pc.ontrack = (e) => {
+      // Показываем аудио-плеер для входящего потока
       remoteAudioHolder.innerHTML = "";
       const audio = document.createElement('audio');
       audio.autoplay = true;
       audio.controls = true;
       audio.srcObject = e.streams[0];
-      remoteAudioHolder.appendChild(document.createTextNode('🎧 Получаем аудио:'));
+      remoteAudioHolder.appendChild(document.createTextNode('Получаем аудио:'));
       remoteAudioHolder.appendChild(audio);
     };
 
     pc.onicecandidate = (e) => {
       if (e.candidate) {
+        // сохраняем сериализуемый кандидат
         localCandidates.push(e.candidate.toJSON());
       }
     };
@@ -220,13 +95,17 @@
     if (!localStream) {
       try {
         localStream = await navigator.mediaDevices.getUserMedia({ audio: true });
-        document.getElementById('micStatus').textContent = "🟢 Микрофон включён";
-        document.getElementById('startMic').disabled = true;
+        document.getElementById('micStatus').textContent = "Микрофон включён";
       } catch (err) {
         alert("Не удалось получить микрофон: " + err.message);
         throw err;
       }
     }
+  }
+
+  async function addLocalTracks(pc) {
+    if (!localStream) return;
+    for (const track of localStream.getTracks()) pc.addTrack(track, localStream);
   }
 
   function waitForIceGatheringComplete(pc, timeout = 7000) {
@@ -239,16 +118,12 @@
         }
       }
       pc.addEventListener('icegatheringstatechange', check);
+      // fallback timeout
       setTimeout(() => {
         pc.removeEventListener('icegatheringstatechange', check);
         resolve();
       }, timeout);
     });
-  }
-
-  async function addLocalTracks(pc) {
-    if (!localStream) return;
-    localStream.getTracks().forEach(track => pc.addTrack(track, localStream));
   }
 
   // Создать Offer
@@ -261,38 +136,39 @@
       const offer = await pc.createOffer();
       await pc.setLocalDescription(offer);
 
+      // ждать сбора кандидатов (или timeout), затем собрать JSON
       await waitForIceGatheringComplete(pc);
       const payload = {
         sdp: pc.localDescription,
         candidates: localCandidates
       };
-      document.getElementById('offerOut').value = JSON.stringify(payload, null, 2);
-      alert("✅ Offer готов — скопируй JSON и отправь другу.");
+      document.getElementById('offerOut').value = JSON.stringify(payload);
+      alert("Offer готов — скопируй JSON и отправь другу.");
     } catch (err) {
-      alert("❌ Ошибка при создании Offer: " + err.message);
+      alert("Ошибка при создании Offer: " + err.message);
       console.error(err);
     }
   };
 
   document.getElementById('copyOffer').onclick = () => {
-    navigator.clipboard.writeText(document.getElementById('offerOut').value)
-      .then(() => alert("📋 Offer скопирован в буфер обмена!"))
-      .catch(err => alert("Ошибка копирования: " + err));
+    navigator.clipboard.writeText(document.getElementById('offerOut').value);
   };
 
-  // Принять Offer и создать Answer
+  // Ответчик: принять Offer и создать Answer
   document.getElementById('acceptOffer').onclick = async () => {
     try {
       const txt = document.getElementById('offerIn').value.trim();
-      if (!txt) { alert("❌ Вставь Offer JSON."); return; }
+      if (!txt) { alert("Вставь Offer JSON."); return; }
       const offerObj = JSON.parse(txt);
 
       await ensureMic();
       createPeerConnection();
       await addLocalTracks(pc);
 
+      // Установить remoteDescription (SDP offer)
       await pc.setRemoteDescription(new RTCSessionDescription(offerObj.sdp));
 
+      // Добавить кандидатов, которые пришли вместе с Offer (если есть)
       if (Array.isArray(offerObj.candidates)) {
         for (const c of offerObj.candidates) {
           try { await pc.addIceCandidate(new RTCIceCandidate(c)); }
@@ -300,35 +176,35 @@
         }
       }
 
+      // Создать Answer и установить локальное описание
       const answer = await pc.createAnswer();
       await pc.setLocalDescription(answer);
 
+      // Подождать сбор локальных кандидатов
       await waitForIceGatheringComplete(pc);
       const payload = {
         sdp: pc.localDescription,
         candidates: localCandidates
       };
-      document.getElementById('answerOut').value = JSON.stringify(payload, null, 2);
-      alert("✅ Answer готов — отправь звонящему!");
+      document.getElementById('answerOut').value = JSON.stringify(payload);
+      alert("Answer готов — скопируй JSON и отправь звонящему.");
     } catch (err) {
-      alert("❌ Ошибка при создании Answer: " + err.message);
+      alert("Ошибка при ответе (createAnswer): " + err.message);
       console.error(err);
     }
   };
 
   document.getElementById('copyAnswer').onclick = () => {
-    navigator.clipboard.writeText(document.getElementById('answerOut').value)
-      .then(() => alert("📋 Answer скопирован в буфер обмена!"))
-      .catch(err => alert("Ошибка копирования: " + err));
+    navigator.clipboard.writeText(document.getElementById('answerOut').value);
   };
 
-  // Установить Answer
+  // Установить Answer на стороне звонящего
   document.getElementById('setAnswerBtn').onclick = async () => {
     try {
       const txt = document.getElementById('answerIn').value.trim();
-      if (!txt) { alert("❌ Вставь Answer JSON."); return; }
+      if (!txt) { alert("Вставь Answer JSON."); return; }
       const answerObj = JSON.parse(txt);
-      if (!pc) { alert("❌ Ошибка: сначала создайте Offer (на стороне звонящего)."); return; }
+      if (!pc) { alert("PC не инициализирован: сначала создайте Offer (на стороне звонящего)."); return; }
 
       await pc.setRemoteDescription(new RTCSessionDescription(answerObj.sdp));
       if (Array.isArray(answerObj.candidates)) {
@@ -337,17 +213,18 @@
           catch(e){ console.warn("addIceCandidate(answer):", e); }
         }
       }
-      alert("✅ Answer установлен. Соединение устанавливается...");
+      alert("Answer установлен. Если всё в порядке — соединение должно установиться.");
     } catch (err) {
-      alert("❌ Ошибка при установке Answer: " + err.message);
+      alert("Ошибка при установке Answer: " + err.message);
       console.error(err);
     }
   };
 
-  // Включить микрофон
+  // Кнопка включения микрофона отдельно
   document.getElementById('startMic').onclick = async () => {
     try {
       await ensureMic();
+      document.getElementById('startMic').disabled = true;
     } catch(e){}
   };
 
@@ -355,22 +232,3 @@
 </script>
 </body>
 </html>
-```
-
----
-
-### ✅ Что изменилось:
-- **Шрифт**: `Orbitron` — футуристический, киберпанк-стиль.
-- **Цвета**: неоновые — `#00ffcc`, `#00ffaa`, `#ff00ff`.
-- **Свечение**: `text-shadow`, `box-shadow` для кнопок, текста, границ.
-- **Градиенты и фон**: тёмный с легким сетчатым градиентом.
-- **Иконки**: добавлены emoji (🎤, 📋, ✅, 🔧, 🌀).
-- **Анимации**: hover-эффекты, плавные переходы.
-- **UX**: улучшены подсказки, сообщения и копирование.
-
----
-
-📌 **Теперь ваш P2P-звонок выглядит как из будущего!**  
-Работает так же, как и раньше — но с космическим стилем 🚀
-
-> 💡 Подсказка: Чтобы ещё больше улучшить UX, можно добавить индикаторы состояния соединения (`connecting`, `connected`, `failed`).
